@@ -23,15 +23,8 @@ public final class PrayerReminderContract {
     public static final String EXTRA_NOTIFICATION_ID =
             "extra_notification_id";
 
-    public static final int TEST_NOTIFICATION_ID = 51001;
-
-    public static final int TEST_ALARM_REQUEST_CODE = 52001;
-
     public static final String EXTRA_TRIGGER_AT =
             "extra_trigger_at";
-
-    public static final String EXTRA_IS_TEST =
-            "extra_is_test";
 
     public static final int PRAYER_ALARM_REQUEST_CODE_BASE =
             53000;

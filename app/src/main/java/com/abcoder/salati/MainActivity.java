@@ -42,24 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private PrayerListAdapter prayerListAdapter;
     private TodayHabitAdapter habitAdapter;
 
-    private final ActivityResultLauncher<String>
-            notificationPermissionLauncher =
-            registerForActivityResult(
-                    new ActivityResultContracts
-                            .RequestPermission(),
-                    isGranted -> {
-                        if (Boolean.TRUE.equals(isGranted)) {
-                            scheduleTestReminder();
-                        } else {
-                            Toast.makeText(
-                                    this,
-                                    R.string
-                                            .notification_permission_denied,
-                                    Toast.LENGTH_LONG
-                            ).show();
-                        }
-                    }
-            );
+
 
     @Override
     protected void onCreate(
@@ -85,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
         observeHabitRecords();
         configurePrayerSettingsButton();
         configureManageHabitsButton();
-        configureTestReminderButton();
         configureReportsButton();
     }
 
@@ -245,81 +227,7 @@ public class MainActivity extends AppCompatActivity {
                         )
                 );
     }
-
-    private void configureTestReminderButton() {
-        binding.testReminderButton
-                .setOnClickListener(view ->
-                        requestPermissionAndSchedule()
-                );
-    }
-
-    private void requestPermissionAndSchedule() {
-        if (Build.VERSION.SDK_INT
-                >= Build.VERSION_CODES.TIRAMISU
-                && ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission
-                        .POST_NOTIFICATIONS
-        ) != PackageManager.PERMISSION_GRANTED) {
-
-            notificationPermissionLauncher.launch(
-                    Manifest.permission
-                            .POST_NOTIFICATIONS
-            );
-
-            return;
-        }
-
-        scheduleTestReminder();
-    }
-
-    private void scheduleTestReminder() {
-        if (!NotificationManagerCompat
-                .from(this)
-                .areNotificationsEnabled()) {
-
-            Toast.makeText(
-                    this,
-                    R.string.notifications_disabled,
-                    Toast.LENGTH_LONG
-            ).show();
-
-            return;
-        }
-
-        try {
-            long triggerAtMillis =
-                    PrayerReminderScheduler
-                            .scheduleTestReminder(this);
-
-            String formattedTime =
-                    DateFormat
-                            .getTimeFormat(this)
-                            .format(
-                                    new Date(
-                                            triggerAtMillis
-                                    )
-                            );
-
-            Toast.makeText(
-                    this,
-                    getString(
-                            R.string
-                                    .test_reminder_scheduled,
-                            formattedTime
-                    ),
-                    Toast.LENGTH_LONG
-            ).show();
-
-        } catch (RuntimeException exception) {
-            Toast.makeText(
-                    this,
-                    R.string
-                            .test_reminder_schedule_failed,
-                    Toast.LENGTH_LONG
-            ).show();
-        }
-    }
+    
     private void configureReportsButton() {
         binding.reportsButton.setOnClickListener(
                 view -> startActivity(

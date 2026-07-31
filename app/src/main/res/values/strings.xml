@@ -48,11 +48,8 @@
     <string name="prayer_notification_title">%1$s prayer check-in</string>
     <string name="prayer_notification_message">How was your %1$s prayer?</string>
 
-    <string name="schedule_test_reminder">Schedule Test Isha Reminder</string>
-    <string name="test_reminder_scheduled">Test reminder requested for approximately %1$s.</string>
     <string name="notification_permission_denied">Notification permission was not granted.</string>
     <string name="notifications_disabled">Notifications are currently disabled for this app.</string>
-    <string name="test_reminder_schedule_failed">Could not schedule the test reminder.</string>
 
     <string name="habits_title">Habits</string>
     <string name="manage_habits">Manage Habits</string>

@@ -55,12 +55,7 @@ public class PrayerAlarmReceiver
                         -1L
                 );
 
-        boolean isTest =
-                intent.getBooleanExtra(
-                        PrayerReminderContract
-                                .EXTRA_IS_TEST,
-                        false
-                );
+
 
         if (recordDate == null
                 || prayerTypeValue == null
@@ -104,28 +99,8 @@ public class PrayerAlarmReceiver
                         application
                                 .getPrayerRepository();
 
-                /*
-                 * Test reminders do not depend on the saved
-                 * enabled/disabled state and do not repeat.
-                 */
-                if (isTest) {
-                    repository.ensurePrayerRecordBlocking(
-                            recordDate,
-                            prayerType,
-                            triggerAtMillis,
-                            notificationId
-                    );
 
-                    PrayerNotificationHelper
-                            .showPrayerReminder(
-                                    applicationContext,
-                                    recordDate,
-                                    prayerType,
-                                    notificationId
-                            );
 
-                    return;
-                }
 
                 /*
                  * Read the latest saved setting in case the user

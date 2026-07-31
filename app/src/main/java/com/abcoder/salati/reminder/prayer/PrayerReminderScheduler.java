@@ -5,9 +5,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -16,8 +14,7 @@ import com.abcoder.salati.data.model.PrayerType;
 
 public final class PrayerReminderScheduler {
 
-    private static final long TEST_DELAY_MILLIS =
-            60_000L;
+
 
     private static final int NOTIFICATION_ID_BASE =
             100_000;
@@ -26,42 +23,7 @@ public final class PrayerReminderScheduler {
         // Prevent instantiation.
     }
 
-    /**
-     * Schedules the temporary Isha test reminder.
-     */
-    public static long scheduleTestReminder(
-            Context context
-    ) {
-        long triggerAtMillis =
-                System.currentTimeMillis()
-                        + TEST_DELAY_MILLIS;
 
-        LocalDate recordDate =
-                Instant.ofEpochMilli(triggerAtMillis)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate();
-
-        PendingIntent pendingIntent =
-                createAlarmPendingIntent(
-                        context,
-                        PrayerReminderContract
-                                .TEST_ALARM_REQUEST_CODE,
-                        recordDate.toString(),
-                        PrayerType.ISHA,
-                        PrayerReminderContract
-                                .TEST_NOTIFICATION_ID,
-                        triggerAtMillis,
-                        true
-                );
-
-        scheduleAlarm(
-                context,
-                triggerAtMillis,
-                pendingIntent
-        );
-
-        return triggerAtMillis;
-    }
 
     /**
      * Schedules or cancels an alarm according to one setting.
@@ -143,8 +105,7 @@ public final class PrayerReminderScheduler {
                         recordDate,
                         setting.prayerType,
                         notificationId,
-                        triggerAtMillis,
-                        false
+                        triggerAtMillis
                 );
 
         scheduleAlarm(
@@ -219,8 +180,7 @@ public final class PrayerReminderScheduler {
             String recordDate,
             PrayerType prayerType,
             int notificationId,
-            long triggerAtMillis,
-            boolean isTest
+            long triggerAtMillis
     ) {
         Intent alarmIntent = new Intent(
                 context,
@@ -253,10 +213,7 @@ public final class PrayerReminderScheduler {
                 triggerAtMillis
         );
 
-        alarmIntent.putExtra(
-                PrayerReminderContract.EXTRA_IS_TEST,
-                isTest
-        );
+
 
         return PendingIntent.getBroadcast(
                 context,
