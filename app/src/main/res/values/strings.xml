@@ -275,4 +275,111 @@
     <string name="edit_prayer_content_description">
     Edit the %1$s prayer. Current status: %2$s
 </string>
+
+    <string name="today_prayer_progress_title">
+    Today’s Prayer Progress
+</string>
+
+    <string name="today_prayer_recorded_format">
+    %1$d of %2$d prayers recorded
+</string>
+
+    <string name="today_prayer_breakdown_format">
+    %1$d On Time · %2$d Late · %3$d Missed
+</string>
+
+    <string name="today_prayer_progress_content_description">
+    %1$d of %2$d prayers recorded today
+</string>
+
+    <string name="week_day_content_description">
+    Open %1$s in Calendar
+</string>
+
+    <string name="week_day_today_content_description">
+    Today, %1$s. Open in Calendar
+</string>
+
+    <string name="calendar_selected_date_format">
+    Selected: %1$s
+</string>
+    <string name="today_overview_title">
+    Today’s Overview
+</string>
+
+    <string name="today_overview_format">
+    %1$d of %2$d prayers recorded · %3$d of %4$d habits completed
+</string>
+
+    <string name="today_overview_no_habits_format">
+    %1$d of %2$d prayers recorded · No active habits
+</string>
+
+    <string name="today_habit_progress_title">
+    Habit Progress
+</string>
+
+    <string name="today_habit_completed_format">
+    %1$d of %2$d habits completed
+</string>
+
+    <string name="today_habit_breakdown_format">
+    %1$d Completed · %2$d Not Completed · %3$d Pending
+</string>
+
+    <string name="today_habit_progress_content_description">
+    %1$d of %2$d habits completed today
+</string>
+
+    <string name="action_log_habit">
+    Log Habit
+</string>
+
+    <string name="habit_record_locked">
+    Saved and locked
+</string>
+
+    <string name="habit_snooze_count_format">
+    Snoozed %1$d of %2$d times today
+</string>
+
+    <string name="log_habit_title_format">
+    Log %1$s
+</string>
+
+    <string name="edit_habit_title_format">
+    Edit %1$s
+</string>
+
+    <string name="current_habit_status_format">
+    Current status: %1$s
+</string>
+
+    <string name="habit_status_saved_message">
+    %1$s saved as %2$s
+</string>
+
+    <string name="habit_record_cleared_message">
+    %1$s record cleared
+</string>
+
+    <string name="habit_change_undone_message">
+    %1$s change undone
+</string>
+
+    <string name="habit_status_save_failed">
+    Could not save %1$s. Please try again.
+</string>
+
+    <string name="habit_undo_failed_message">
+    Could not undo the change to %1$s.
+</string>
+
+    <string name="log_habit_content_description">
+    Log the %1$s habit
+</string>
+
+    <string name="edit_habit_content_description">
+    Edit the %1$s habit. Current status: %2$s
+</string>
 </resources>

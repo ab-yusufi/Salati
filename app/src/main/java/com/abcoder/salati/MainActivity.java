@@ -23,6 +23,8 @@ import com.abcoder.salati.ui.today.TodayFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.time.LocalDate;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String STATE_SELECTED_ITEM =
@@ -313,5 +315,28 @@ public class MainActivity extends AppCompatActivity {
         );
 
         super.onSaveInstanceState(outState);
+    }
+    public void openCalendarForDate(
+            LocalDate selectedDate
+    ) {
+        Bundle result = new Bundle();
+
+        result.putString(
+                CalendarFragment
+                        .BUNDLE_KEY_SELECTED_DATE,
+                selectedDate.toString()
+        );
+
+        getSupportFragmentManager()
+                .setFragmentResult(
+                        CalendarFragment
+                                .REQUEST_KEY_SELECTED_DATE,
+                        result
+                );
+
+        binding.bottomNavigation
+                .setSelectedItemId(
+                        R.id.navigation_calendar
+                );
     }
 }

@@ -6,7 +6,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardUseCompatPadding="true"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="20dp"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -15,67 +17,94 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/habitTitleText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            tools:text="Daily Quran Reading" />
-
-        <TextView
-            android:id="@+id/habitReminderText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="14sp"
-            tools:text="Reminder: 9:00 PM" />
-
-        <TextView
-            android:id="@+id/habitStatusText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="16sp"
-            tools:text="Status: Pending" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/completedButton"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
                 android:layout_weight="1"
-                android:minWidth="0dp"
-                android:text="@string/action_completed"
-                android:textSize="12sp" />
+                android:orientation="vertical">
 
-            <Button
-                android:id="@+id/notCompletedButton"
-                android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/habitTitleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textStyle="bold"
+                    tools:text="Daily Quran Reading" />
+
+                <TextView
+                    android:id="@+id/habitReminderText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Reminder: 9:00 PM" />
+
+                <TextView
+                    android:id="@+id/habitSnoozeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone"
+                    tools:text="Snoozed 1 of 3 times today" />
+
+                <TextView
+                    android:id="@+id/lockedStatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:drawableStart="@drawable/ic_lock_16"
+                    android:drawablePadding="6dp"
+                    android:drawableTint="?attr/colorOnSurfaceVariant"
+                    android:text="@string/habit_record_locked"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/habitStatusChip"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:text="@string/action_not_completed"
-                android:textSize="12sp" />
+                android:clickable="false"
+                android:focusable="false"
+                app:chipBackgroundColor="@android:color/transparent"
+                app:chipStrokeWidth="1dp"
+                tools:text="Completed" />
 
         </LinearLayout>
 
-        <Button
-            android:id="@+id/clearButton"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/logHabitButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:layout_marginTop="4dp"
-            android:minWidth="0dp"
-            android:text="@string/action_clear"
-            android:visibility="gone" />
+            android:layout_marginTop="14dp"
+            android:minHeight="48dp"
+            android:text="@string/action_log_habit" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/editHabitButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="14dp"
+            android:minHeight="48dp"
+            android:text="@string/action_edit"
+            android:visibility="gone"
+            app:icon="@drawable/ic_edit_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorPrimary" />
 
     </LinearLayout>
 

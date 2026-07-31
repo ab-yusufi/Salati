@@ -146,6 +146,19 @@ public class TodayViewModel extends ViewModel {
                 AnswerSource.APP
         );
     }
+    public void setHabitStatus(
+            long habitId,
+            HabitStatus habitStatus,
+            HabitRepository.StatusOperationCallback callback
+    ) {
+        habitRepository.setHabitStatus(
+                habitId,
+                today,
+                habitStatus,
+                AnswerSource.APP,
+                callback
+        );
+    }
 
     private void rebuildHabitItems() {
         Map<Long, HabitRecord> recordMap =

@@ -18,7 +18,11 @@ import com.abcoder.salati.data.entity.HabitRecord;
 import com.abcoder.salati.data.model.AnswerSource;
 import com.abcoder.salati.data.model.HabitStatus;
 
+import android.util.Log;
+
 public final class HabitRepository {
+    private static final String TAG =
+            "HabitRepository";
 
     public static final int MAX_ACTIVE_HABITS = 5;
 
@@ -26,6 +30,12 @@ public final class HabitRepository {
 
     public static final int MAXIMUM_DAILY_SNOOZES = 3;
 
+    public interface StatusOperationCallback {
+
+        void onSuccess();
+
+        void onError(Exception exception);
+    }
     public interface SaveHabitCallback {
 
         void onSuccess(Habit savedHabit);
@@ -226,14 +236,53 @@ public final class HabitRepository {
             HabitStatus habitStatus,
             AnswerSource answerSource
     ) {
-        databaseExecutor.execute(() ->
+        setHabitStatus(
+                habitId,
+                recordDate,
+                habitStatus,
+                answerSource,
+                null
+        );
+    }
+
+    public void setHabitStatus(
+            long habitId,
+            String recordDate,
+            HabitStatus habitStatus,
+            AnswerSource answerSource,
+            StatusOperationCallback callback
+    ) {
+        databaseExecutor.execute(() -> {
+            try {
                 setHabitStatusBlocking(
                         habitId,
                         recordDate,
                         habitStatus,
                         answerSource
-                )
-        );
+                );
+
+                if (callback != null) {
+                    mainHandler.post(
+                            callback::onSuccess
+                    );
+                }
+
+            } catch (Exception exception) {
+                Log.e(
+                        TAG,
+                        "Could not update habit status",
+                        exception
+                );
+
+                if (callback != null) {
+                    mainHandler.post(
+                            () -> callback.onError(
+                                    exception
+                            )
+                    );
+                }
+            }
+        });
     }
 
     @WorkerThread
