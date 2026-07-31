@@ -118,4 +118,52 @@
     <string name="daily_prayer_format">Prayers — On time %1$d · Late %2$d · Missed %3$d · Unrecorded %4$d</string>
 
     <string name="daily_habit_format">Habits — Completed %1$d · Not completed %2$d · Pending %3$d</string>
+
+    <string name="notification_onboarding_title">
+    Stay on track with reminders
+</string>
+
+    <string name="notification_onboarding_message">
+    Salati uses notifications for your configured prayer and habit reminders. Reminder times are chosen by you; Salati does not calculate prayer times.
+</string>
+
+    <string name="notification_onboarding_allow">
+    Allow Notifications
+</string>
+
+    <string name="notification_onboarding_not_now">
+    Not Now
+</string>
+
+    <string name="notification_permission_enabled_message">
+    Notifications are enabled.
+</string>
+
+    <string name="notification_permission_denied_message">
+    Notifications were not enabled. You can change this later in Prayer Reminder Settings.
+</string>
+
+    <string name="notification_status_title">
+    Notification Access
+</string>
+
+    <string name="notification_status_enabled">
+    Notifications are enabled for Salati.
+</string>
+
+    <string name="notification_status_disabled">
+    Notifications are disabled. Reminder notifications cannot appear until they are enabled.
+</string>
+
+    <string name="notification_action_allow">
+    Allow Notifications
+</string>
+
+    <string name="notification_action_open_settings">
+    Open Notification Settings
+</string>
+
+    <string name="notification_action_manage">
+    Manage Notification Settings
+</string>
 </resources>

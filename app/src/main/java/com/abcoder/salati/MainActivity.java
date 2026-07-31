@@ -33,6 +33,10 @@ import com.abcoder.salati.ui.today.TodayViewModel;
 import com.abcoder.salati.ui.today.TodayViewModelFactory;
 import com.abcoder.salati.ui.reports.ReportsActivity;
 
+import com.abcoder.salati.notification.NotificationPermissionHelper;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
+
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
@@ -42,6 +46,26 @@ public class MainActivity extends AppCompatActivity {
     private PrayerListAdapter prayerListAdapter;
     private TodayHabitAdapter habitAdapter;
 
+    private final ActivityResultLauncher<String>
+            notificationPermissionLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts
+                            .RequestPermission(),
+                    isGranted -> {
+                        int messageResource =
+                                Boolean.TRUE.equals(isGranted)
+                                        ? R.string
+                                          .notification_permission_enabled_message
+                                        : R.string
+                                          .notification_permission_denied_message;
+
+                        Snackbar.make(
+                                binding.main,
+                                messageResource,
+                                Snackbar.LENGTH_LONG
+                        ).show();
+                    }
+            );
 
 
     @Override
@@ -69,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
         configurePrayerSettingsButton();
         configureManageHabitsButton();
         configureReportsButton();
+        maybeShowNotificationPermissionOnboarding();
     }
 
     private void configureSystemBarInsets() {
@@ -227,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
                         )
                 );
     }
-    
+
     private void configureReportsButton() {
         binding.reportsButton.setOnClickListener(
                 view -> startActivity(
@@ -236,6 +261,61 @@ public class MainActivity extends AppCompatActivity {
                                 ReportsActivity.class
                         )
                 )
+        );
+    }
+
+    private void maybeShowNotificationPermissionOnboarding() {
+        if (!NotificationPermissionHelper
+                .requiresRuntimePermission()) {
+            return;
+        }
+
+        if (NotificationPermissionHelper
+                .hasRuntimePermission(this)) {
+            return;
+        }
+
+        if (NotificationPermissionHelper
+                .wasOnboardingShown(this)) {
+            return;
+        }
+
+        /*
+         * Mark it immediately so dismissing the explanation
+         * does not cause it to appear every time the app opens.
+         */
+        NotificationPermissionHelper
+                .markOnboardingShown(this);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(
+                        R.string
+                                .notification_onboarding_title
+                )
+                .setMessage(
+                        R.string
+                                .notification_onboarding_message
+                )
+                .setPositiveButton(
+                        R.string
+                                .notification_onboarding_allow,
+                        (dialog, which) ->
+                                requestNotificationPermission()
+                )
+                .setNegativeButton(
+                        R.string
+                                .notification_onboarding_not_now,
+                        null
+                )
+                .show();
+    }
+
+    private void requestNotificationPermission() {
+        NotificationPermissionHelper
+                .markPermissionRequested(this);
+
+        notificationPermissionLauncher.launch(
+                Manifest.permission.POST_NOTIFICATIONS
         );
     }
 }

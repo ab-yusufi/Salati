@@ -1,5 +1,7 @@
 package com.abcoder.salati.ui.settings;
 
+import android.Manifest;
+
 import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.text.format.DateFormat;
@@ -17,6 +19,13 @@ import com.abcoder.salati.data.entity.PrayerReminderSetting;
 import com.abcoder.salati.databinding.ActivityPrayerSettingsBinding;
 import com.abcoder.salati.reminder.prayer.PrayerReminderScheduler;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import com.abcoder.salati.R;
+import com.abcoder.salati.notification.NotificationPermissionHelper;
+import com.google.android.material.snackbar.Snackbar;
+
 public class PrayerSettingsActivity
         extends AppCompatActivity {
 
@@ -25,6 +34,29 @@ public class PrayerSettingsActivity
     private PrayerSettingsViewModel viewModel;
 
     private PrayerReminderAdapter adapter;
+
+    private final ActivityResultLauncher<String>
+            notificationPermissionLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts
+                            .RequestPermission(),
+                    isGranted -> {
+                        updateNotificationStatus();
+
+                        int messageResource =
+                                Boolean.TRUE.equals(isGranted)
+                                        ? R.string
+                                          .notification_permission_enabled_message
+                                        : R.string
+                                          .notification_permission_denied_message;
+
+                        Snackbar.make(
+                                binding.main,
+                                messageResource,
+                                Snackbar.LENGTH_LONG
+                        ).show();
+                    }
+            );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,9 +75,21 @@ public class PrayerSettingsActivity
         configureViewModel();
         configureReminderList();
         configureBackButton();
+        configureNotificationAccess();
         observeReminderSettings();
+        updateNotificationStatus();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        /*
+         * Refresh after the user returns from Android's
+         * notification settings.
+         */
+        updateNotificationStatus();
+    }
     private void configureSystemBarInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(
                 binding.main,
@@ -175,6 +219,87 @@ public class PrayerSettingsActivity
         PrayerReminderScheduler.applySetting(
                 getApplicationContext(),
                 setting
+        );
+    }
+
+    private void configureNotificationAccess() {
+        binding.notificationSettingsButton
+                .setOnClickListener(
+                        view -> handleNotificationAction()
+                );
+    }
+
+    private void handleNotificationAction() {
+        if (NotificationPermissionHelper
+                .areNotificationsEnabled(this)) {
+
+            NotificationPermissionHelper
+                    .openNotificationSettings(this);
+
+            return;
+        }
+
+        boolean canShowPermissionDialog =
+                NotificationPermissionHelper
+                        .requiresRuntimePermission()
+                        && !NotificationPermissionHelper
+                        .hasRuntimePermission(this)
+                        && !NotificationPermissionHelper
+                        .wasPermissionRequested(this);
+
+        if (canShowPermissionDialog) {
+            NotificationPermissionHelper
+                    .markPermissionRequested(this);
+
+            notificationPermissionLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+            );
+
+            return;
+        }
+
+        NotificationPermissionHelper
+                .openNotificationSettings(this);
+    }
+
+    private void updateNotificationStatus() {
+        boolean notificationsEnabled =
+                NotificationPermissionHelper
+                        .areNotificationsEnabled(this);
+
+        if (notificationsEnabled) {
+            binding.notificationStatusText.setText(
+                    R.string
+                            .notification_status_enabled
+            );
+
+            binding.notificationSettingsButton.setText(
+                    R.string
+                            .notification_action_manage
+            );
+
+            return;
+        }
+
+        binding.notificationStatusText.setText(
+                R.string
+                        .notification_status_disabled
+        );
+
+        boolean permissionCanBeRequested =
+                NotificationPermissionHelper
+                        .requiresRuntimePermission()
+                        && !NotificationPermissionHelper
+                        .hasRuntimePermission(this)
+                        && !NotificationPermissionHelper
+                        .wasPermissionRequested(this);
+
+        binding.notificationSettingsButton.setText(
+                permissionCanBeRequested
+                        ? R.string
+                          .notification_action_allow
+                        : R.string
+                          .notification_action_open_settings
         );
     }
 }
