@@ -1,7 +1,118 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Salati" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style
+        name="Base.Theme.Salati"
+        parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- Brand -->
+        <item name="colorPrimary">
+            @color/salati_primary
+        </item>
+
+        <item name="colorOnPrimary">
+            @color/salati_on_primary
+        </item>
+
+        <item name="colorPrimaryContainer">
+            @color/salati_primary_container
+        </item>
+
+        <item name="colorOnPrimaryContainer">
+            @color/salati_on_primary_container
+        </item>
+
+        <item name="colorSecondary">
+            @color/salati_secondary
+        </item>
+
+        <item name="colorOnSecondary">
+            @color/salati_on_secondary
+        </item>
+
+        <item name="colorSecondaryContainer">
+            @color/salati_secondary_container
+        </item>
+
+        <item name="colorOnSecondaryContainer">
+            @color/salati_on_secondary_container
+        </item>
+
+        <!-- Background and surfaces -->
+        <item name="android:colorBackground">
+            @color/salati_background
+        </item>
+
+        <item name="colorOnBackground">
+            @color/salati_on_background
+        </item>
+
+        <item name="colorSurface">
+            @color/salati_surface
+        </item>
+
+        <item name="colorOnSurface">
+            @color/salati_on_surface
+        </item>
+
+        <item name="colorSurfaceVariant">
+            @color/salati_surface_variant
+        </item>
+
+        <item name="colorOnSurfaceVariant">
+            @color/salati_on_surface_variant
+        </item>
+
+        <item name="colorOutline">
+            @color/salati_outline
+        </item>
+
+        <!-- Error -->
+        <item name="colorError">
+            @color/salati_error
+        </item>
+
+        <item name="colorOnError">
+            @color/salati_on_error
+        </item>
+
+        <item name="colorErrorContainer">
+            @color/salati_error_container
+        </item>
+
+        <item name="colorOnErrorContainer">
+            @color/salati_on_error_container
+        </item>
+
+        <!-- Window -->
+        <item name="android:windowBackground">
+            @color/salati_background
+        </item>
+
+        <item name="android:statusBarColor">
+            @android:color/transparent
+        </item>
+
+        <item name="android:navigationBarColor">
+            @color/salati_surface
+        </item>
+
+        <item name="android:windowLightStatusBar">
+            false
+        </item>
+
+        <item name="android:windowLightNavigationBar">
+            false
+        </item>
+
+        <item name="android:forceDarkAllowed">
+            false
+        </item>
+
     </style>
+
+    <style
+        name="Theme.Salati"
+        parent="Base.Theme.Salati" />
+
 </resources>

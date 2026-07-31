@@ -10,6 +10,8 @@ import com.abcoder.salati.reminder.habit.HabitReminderRescheduler;
 import com.abcoder.salati.reminder.prayer.PrayerNotificationHelper;
 import com.abcoder.salati.reminder.prayer.PrayerReminderRescheduler;
 
+import com.abcoder.salati.ui.theme.ThemeManager;
+
 public class SalatiApplication extends Application {
 
     private AppDatabase database;
@@ -19,7 +21,7 @@ public class SalatiApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        ThemeManager.applySavedTheme(this);
         database = AppDatabase.getInstance(this);
 
         prayerRepository =

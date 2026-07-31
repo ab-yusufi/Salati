@@ -1,50 +1,49 @@
 package com.abcoder.salati;
 
 import android.Manifest;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.text.format.DateFormat;
-import android.view.View;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import java.util.Date;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.abcoder.salati.databinding.ActivityMainBinding;
-import com.abcoder.salati.reminder.prayer.PrayerReminderScheduler;
-import com.abcoder.salati.ui.habits.HabitManagementActivity;
-import com.abcoder.salati.ui.settings.PrayerSettingsActivity;
-import com.abcoder.salati.ui.today.PrayerListAdapter;
-import com.abcoder.salati.ui.today.TodayHabitAdapter;
-import com.abcoder.salati.ui.today.TodayViewModel;
-import com.abcoder.salati.ui.today.TodayViewModelFactory;
-import com.abcoder.salati.ui.reports.ReportsActivity;
-
 import com.abcoder.salati.notification.NotificationPermissionHelper;
+import com.abcoder.salati.ui.calendar.CalendarFragment;
+import com.abcoder.salati.ui.insights.InsightsFragment;
+import com.abcoder.salati.ui.settings.SettingsFragment;
+import com.abcoder.salati.ui.today.TodayFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String STATE_SELECTED_ITEM =
+            "selected_bottom_navigation_item";
+
+    private static final String TAG_TODAY =
+            "main_today";
+
+    private static final String TAG_CALENDAR =
+            "main_calendar";
+
+    private static final String TAG_INSIGHTS =
+            "main_insights";
+
+    private static final String TAG_SETTINGS =
+            "main_settings";
+
     private ActivityMainBinding binding;
 
-    private TodayViewModel todayViewModel;
-
-    private PrayerListAdapter prayerListAdapter;
-    private TodayHabitAdapter habitAdapter;
+    private int selectedItemId =
+            R.id.navigation_today;
 
     private final ActivityResultLauncher<String>
             notificationPermissionLauncher =
@@ -53,7 +52,9 @@ public class MainActivity extends AppCompatActivity {
                             .RequestPermission(),
                     isGranted -> {
                         int messageResource =
-                                Boolean.TRUE.equals(isGranted)
+                                Boolean.TRUE.equals(
+                                        isGranted
+                                )
                                         ? R.string
                                           .notification_permission_enabled_message
                                         : R.string
@@ -66,7 +67,6 @@ public class MainActivity extends AppCompatActivity {
                         ).show();
                     }
             );
-
 
     @Override
     protected void onCreate(
@@ -84,15 +84,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         configureSystemBarInsets();
-        configureViewModel();
-        configurePrayerList();
-        configureHabitList();
-        configureDate();
-        observePrayerRecords();
-        observeHabitRecords();
-        configurePrayerSettingsButton();
-        configureManageHabitsButton();
-        configureReportsButton();
+        configureBottomNavigation(
+                savedInstanceState
+        );
         maybeShowNotificationPermissionOnboarding();
     }
 
@@ -119,148 +113,142 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-    private void configureViewModel() {
-        SalatiApplication application =
-                (SalatiApplication)
-                        getApplication();
+    private void configureBottomNavigation(
+            Bundle savedInstanceState
+    ) {
+        if (savedInstanceState != null) {
+            selectedItemId =
+                    savedInstanceState.getInt(
+                            STATE_SELECTED_ITEM,
+                            R.id.navigation_today
+                    );
+        }
 
-        TodayViewModelFactory factory =
-                new TodayViewModelFactory(
-                        application
-                                .getPrayerRepository(),
-                        application
-                                .getHabitRepository()
-                );
+        binding.bottomNavigation
+                .setOnItemSelectedListener(
+                        item -> {
+                            int itemId = item.getItemId();
 
-        todayViewModel =
-                new ViewModelProvider(this, factory)
-                        .get(TodayViewModel.class);
-    }
+                            if (!isMainDestination(itemId)) {
+                                return false;
+                            }
 
-    private void configurePrayerList() {
-        prayerListAdapter =
-                new PrayerListAdapter(
-                        (prayerType, prayerStatus) ->
-                                todayViewModel
-                                        .setPrayerStatus(
-                                                prayerType,
-                                                prayerStatus
-                                        )
-                );
+                            selectedItemId = itemId;
+                            showDestination(itemId);
 
-        binding.prayerList.setLayoutManager(
-                new LinearLayoutManager(this)
-        );
-
-        binding.prayerList.setAdapter(
-                prayerListAdapter
-        );
-
-        binding.prayerList.setNestedScrollingEnabled(
-                false
-        );
-    }
-
-    private void configureHabitList() {
-        habitAdapter =
-                new TodayHabitAdapter(
-                        (habitId, status) ->
-                                todayViewModel
-                                        .setHabitStatus(
-                                                habitId,
-                                                status
-                                        )
-                );
-
-        binding.habitList.setLayoutManager(
-                new LinearLayoutManager(this)
-        );
-
-        binding.habitList.setAdapter(habitAdapter);
-
-        binding.habitList.setNestedScrollingEnabled(
-                false
-        );
-    }
-
-    private void configureDate() {
-        binding.todayDateText.setText(
-                todayViewModel.getDisplayDate()
-        );
-    }
-
-    private void observePrayerRecords() {
-        todayViewModel
-                .getTodayPrayerRecords()
-                .observe(
-                        this,
-                        prayerListAdapter::submitList
-                );
-    }
-
-    private void observeHabitRecords() {
-        todayViewModel
-                .getTodayHabitItems()
-                .observe(
-                        this,
-                        items -> {
-                            habitAdapter.submitList(items);
-
-                            boolean empty =
-                                    items == null
-                                            || items.isEmpty();
-
-                            binding.noHabitsText
-                                    .setVisibility(
-                                            empty
-                                                    ? View.VISIBLE
-                                                    : View.GONE
-                                    );
-
-                            binding.habitList
-                                    .setVisibility(
-                                            empty
-                                                    ? View.GONE
-                                                    : View.VISIBLE
-                                    );
+                            return true;
                         }
                 );
+
+        binding.bottomNavigation
+                .getMenu()
+                .findItem(selectedItemId)
+                .setChecked(true);
+
+        showDestination(selectedItemId);
     }
 
-    private void configurePrayerSettingsButton() {
-        binding.prayerSettingsButton
-                .setOnClickListener(view ->
-                        startActivity(
-                                new Intent(
-                                        this,
-                                        PrayerSettingsActivity
-                                                .class
-                                )
-                        )
-                );
+    private boolean isMainDestination(
+            int itemId
+    ) {
+        return itemId == R.id.navigation_today
+                || itemId == R.id.navigation_calendar
+                || itemId == R.id.navigation_insights
+                || itemId == R.id.navigation_settings;
     }
 
-    private void configureManageHabitsButton() {
-        binding.manageHabitsButton
-                .setOnClickListener(view ->
-                        startActivity(
-                                new Intent(
-                                        this,
-                                        HabitManagementActivity
-                                                .class
-                                )
-                        )
-                );
+    private void showDestination(
+            int itemId
+    ) {
+        FragmentManager fragmentManager =
+                getSupportFragmentManager();
+
+        String targetTag =
+                getFragmentTag(itemId);
+
+        Fragment targetFragment =
+                fragmentManager
+                        .findFragmentByTag(
+                                targetTag
+                        );
+
+        FragmentTransaction transaction =
+                fragmentManager
+                        .beginTransaction()
+                        .setReorderingAllowed(true);
+
+        for (Fragment fragment :
+                fragmentManager.getFragments()) {
+
+            if (fragment.isAdded()) {
+                transaction.hide(fragment);
+            }
+        }
+
+        if (targetFragment == null) {
+            targetFragment =
+                    createFragment(itemId);
+
+            transaction.add(
+                    R.id.fragmentContainer,
+                    targetFragment,
+                    targetTag
+            );
+
+        } else {
+            transaction.show(targetFragment);
+        }
+
+        transaction.commit();
     }
 
-    private void configureReportsButton() {
-        binding.reportsButton.setOnClickListener(
-                view -> startActivity(
-                        new Intent(
-                                this,
-                                ReportsActivity.class
-                        )
-                )
+    private Fragment createFragment(
+            int itemId
+    ) {
+        if (itemId == R.id.navigation_today) {
+            return new TodayFragment();
+        }
+
+        if (itemId == R.id.navigation_calendar) {
+            return new CalendarFragment();
+        }
+
+        if (itemId == R.id.navigation_insights) {
+            return new InsightsFragment();
+        }
+
+        if (itemId == R.id.navigation_settings) {
+            return new SettingsFragment();
+        }
+
+        throw new IllegalArgumentException(
+                "Unknown navigation destination: "
+                        + itemId
+        );
+    }
+
+    private String getFragmentTag(
+            int itemId
+    ) {
+        if (itemId == R.id.navigation_today) {
+            return TAG_TODAY;
+        }
+
+        if (itemId == R.id.navigation_calendar) {
+            return TAG_CALENDAR;
+        }
+
+        if (itemId == R.id.navigation_insights) {
+            return TAG_INSIGHTS;
+        }
+
+        if (itemId == R.id.navigation_settings) {
+            return TAG_SETTINGS;
+        }
+
+        throw new IllegalArgumentException(
+                "Unknown navigation destination: "
+                        + itemId
         );
     }
 
@@ -280,10 +268,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        /*
-         * Mark it immediately so dismissing the explanation
-         * does not cause it to appear every time the app opens.
-         */
         NotificationPermissionHelper
                 .markOnboardingShown(this);
 
@@ -317,5 +301,17 @@ public class MainActivity extends AppCompatActivity {
         notificationPermissionLauncher.launch(
                 Manifest.permission.POST_NOTIFICATIONS
         );
+    }
+
+    @Override
+    protected void onSaveInstanceState(
+            Bundle outState
+    ) {
+        outState.putInt(
+                STATE_SELECTED_ITEM,
+                selectedItemId
+        );
+
+        super.onSaveInstanceState(outState);
     }
 }

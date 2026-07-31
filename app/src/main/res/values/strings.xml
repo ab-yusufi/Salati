@@ -166,4 +166,54 @@
     <string name="notification_action_manage">
     Manage Notification Settings
 </string>
+    <string name="appearance_title">
+    Appearance
+</string>
+
+    <string name="theme_system">
+    System Default
+</string>
+
+    <string name="theme_light">
+    Light
+</string>
+
+    <string name="theme_dark">
+    Dark
+</string>
+    <string name="prayers_title">
+    Prayers
+</string>
+
+    <string name="calendar_title">
+    Calendar
+</string>
+
+    <string name="insights_title">
+    Insights
+</string>
+
+    <string name="settings_title">
+    Settings
+</string>
+
+    <string name="calendar_placeholder_message">
+    Your monthly prayer and habit history will appear here in the next development step.
+</string>
+
+    <string name="insights_description">
+    View your weekly and monthly prayer and habit reports.
+</string>
+
+    <string name="settings_description">
+    Manage reminders, habits, notifications, and appearance.
+</string>
+
+    <string name="change_appearance">
+    Change Appearance
+</string>
+
+    <string name="current_theme_format">
+    Current theme: %1$s
+</string>
 </resources>

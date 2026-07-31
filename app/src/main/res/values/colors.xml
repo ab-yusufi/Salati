@@ -1,5 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- Brand colors -->
+    <color name="salati_primary">#006B5F</color>
+    <color name="salati_on_primary">#FFFFFF</color>
+    <color name="salati_primary_container">#A5F2E6</color>
+    <color name="salati_on_primary_container">#00201C</color>
+
+    <color name="salati_secondary">#755B00</color>
+    <color name="salati_on_secondary">#FFFFFF</color>
+    <color name="salati_secondary_container">#FFE17B</color>
+    <color name="salati_on_secondary_container">#241A00</color>
+
+    <!-- Background and surfaces -->
+    <color name="salati_background">#F8FBF7</color>
+    <color name="salati_on_background">#191C1B</color>
+
+    <color name="salati_surface">#F8FBF7</color>
+    <color name="salati_on_surface">#191C1B</color>
+
+    <color name="salati_surface_variant">#DCE5E1</color>
+    <color name="salati_on_surface_variant">#404946</color>
+
+    <color name="salati_outline">#707976</color>
+
+    <!-- Error colors -->
+    <color name="salati_error">#BA1A1A</color>
+    <color name="salati_on_error">#FFFFFF</color>
+    <color name="salati_error_container">#FFDAD6</color>
+    <color name="salati_on_error_container">#410002</color>
+
+    <!-- Prayer status colors -->
+    <color name="prayer_status_on_time">#2E7D32</color>
+    <color name="prayer_status_late">#A85F00</color>
+    <color name="prayer_status_missed">#BA1A1A</color>
+    <color name="prayer_status_unrecorded">#68716E</color>
+
+    <!-- Habit status colors -->
+    <color name="habit_status_completed">#2E7D32</color>
+    <color name="habit_status_not_completed">#BA1A1A</color>
+    <color name="habit_status_pending">#68716E</color>
+
+    <!-- General colors retained for compatibility -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
 </resources>

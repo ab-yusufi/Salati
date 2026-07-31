@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style
-        name="Base.Theme.Salati"
-        parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Salati" parent="Theme.Material3.DayNight.NoActionBar">
 
         <!-- Brand -->
         <item name="colorPrimary">
@@ -98,11 +96,11 @@
         </item>
 
         <item name="android:windowLightStatusBar">
-            true
+            false
         </item>
 
         <item name="android:windowLightNavigationBar">
-            true
+            false
         </item>
 
         <item name="android:forceDarkAllowed">
@@ -110,9 +108,4 @@
         </item>
 
     </style>
-
-    <style
-        name="Theme.Salati"
-        parent="Base.Theme.Salati" />
-
 </resources>
