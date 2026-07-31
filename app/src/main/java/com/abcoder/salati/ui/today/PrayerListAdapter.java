@@ -1,11 +1,14 @@
 package com.abcoder.salati.ui.today;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -21,21 +24,21 @@ public final class PrayerListAdapter
         extends RecyclerView.Adapter<
         PrayerListAdapter.PrayerViewHolder> {
 
-    public interface OnPrayerStatusSelectedListener {
+    public interface PrayerActionListener {
 
-        void onPrayerStatusSelected(
+        void onPrayerActionRequested(
                 PrayerType prayerType,
-                PrayerStatus prayerStatus
+                PrayerStatus currentStatus
         );
     }
 
     private final List<PrayerRecord> prayerRecords =
             new ArrayList<>();
 
-    private final OnPrayerStatusSelectedListener listener;
+    private final PrayerActionListener listener;
 
     public PrayerListAdapter(
-            OnPrayerStatusSelectedListener listener
+            PrayerActionListener listener
     ) {
         this.listener = listener;
     }
@@ -50,8 +53,7 @@ public final class PrayerListAdapter
         }
 
         /*
-         * There are only five prayer rows, so a full refresh is
-         * acceptable for Version 1.
+         * There are always only five prayer rows.
          */
         notifyDataSetChanged();
     }
@@ -63,7 +65,9 @@ public final class PrayerListAdapter
             int viewType
     ) {
         LayoutInflater inflater =
-                LayoutInflater.from(parent.getContext());
+                LayoutInflater.from(
+                        parent.getContext()
+                );
 
         ItemPrayerBinding binding =
                 ItemPrayerBinding.inflate(
@@ -80,10 +84,10 @@ public final class PrayerListAdapter
             @NonNull PrayerViewHolder holder,
             int position
     ) {
-        PrayerRecord prayerRecord =
-                prayerRecords.get(position);
-
-        holder.bind(prayerRecord, listener);
+        holder.bind(
+                prayerRecords.get(position),
+                listener
+        );
     }
 
     @Override
@@ -100,22 +104,22 @@ public final class PrayerListAdapter
                 ItemPrayerBinding binding
         ) {
             super(binding.getRoot());
+
             this.binding = binding;
         }
 
         void bind(
                 PrayerRecord prayerRecord,
-                OnPrayerStatusSelectedListener listener
+                PrayerActionListener listener
         ) {
             Context context =
                     binding.getRoot().getContext();
 
-            binding.prayerNameText.setText(
+            String prayerName =
                     getPrayerName(
                             context,
                             prayerRecord.prayerType
-                    )
-            );
+                    );
 
             String statusName =
                     getStatusName(
@@ -123,66 +127,127 @@ public final class PrayerListAdapter
                             prayerRecord.status
                     );
 
-            binding.prayerStatusText.setText(
-                    context.getString(
-                            R.string.prayer_status_format,
-                            statusName
-                    )
+            binding.prayerNameText.setText(
+                    prayerName
             );
 
-            /*
-             * Disable the currently selected status button.
-             * The other buttons remain available for corrections.
-             */
-            binding.onTimeButton.setEnabled(
-                    prayerRecord.status
-                            != PrayerStatus.ON_TIME
+            binding.prayerStatusChip.setText(
+                    statusName
             );
 
-            binding.lateButton.setEnabled(
+            applyStatusColor(
+                    context,
                     prayerRecord.status
-                            != PrayerStatus.LATE
             );
 
-            binding.missedButton.setEnabled(
+            boolean recorded =
                     prayerRecord.status
-                            != PrayerStatus.MISSED
+                            != PrayerStatus.UNRECORDED;
+
+            binding.lockedStatusText.setVisibility(
+                    recorded
+                            ? View.VISIBLE
+                            : View.GONE
             );
 
-            binding.clearButton.setVisibility(
-                    prayerRecord.status
-                            == PrayerStatus.UNRECORDED
+            binding.logPrayerButton.setVisibility(
+                    recorded
                             ? View.GONE
                             : View.VISIBLE
             );
 
-            binding.onTimeButton.setOnClickListener(view ->
-                    listener.onPrayerStatusSelected(
-                            prayerRecord.prayerType,
-                            PrayerStatus.ON_TIME
-                    )
+            binding.editPrayerButton.setVisibility(
+                    recorded
+                            ? View.VISIBLE
+                            : View.GONE
             );
 
-            binding.lateButton.setOnClickListener(view ->
-                    listener.onPrayerStatusSelected(
-                            prayerRecord.prayerType,
-                            PrayerStatus.LATE
-                    )
-            );
+            View.OnClickListener actionListener =
+                    view ->
+                            listener
+                                    .onPrayerActionRequested(
+                                            prayerRecord
+                                                    .prayerType,
+                                            prayerRecord
+                                                    .status
+                                    );
 
-            binding.missedButton.setOnClickListener(view ->
-                    listener.onPrayerStatusSelected(
-                            prayerRecord.prayerType,
-                            PrayerStatus.MISSED
-                    )
-            );
+            binding.logPrayerButton
+                    .setOnClickListener(
+                            actionListener
+                    );
 
-            binding.clearButton.setOnClickListener(view ->
-                    listener.onPrayerStatusSelected(
-                            prayerRecord.prayerType,
-                            PrayerStatus.UNRECORDED
-                    )
-            );
+            binding.editPrayerButton
+                    .setOnClickListener(
+                            actionListener
+                    );
+
+            binding.logPrayerButton
+                    .setContentDescription(
+                            context.getString(
+                                    R.string
+                                            .log_prayer_content_description,
+                                    prayerName
+                            )
+                    );
+
+            binding.editPrayerButton
+                    .setContentDescription(
+                            context.getString(
+                                    R.string
+                                            .edit_prayer_content_description,
+                                    prayerName,
+                                    statusName
+                            )
+                    );
+        }
+
+        private void applyStatusColor(
+                Context context,
+                PrayerStatus status
+        ) {
+            int statusColor =
+                    ContextCompat.getColor(
+                            context,
+                            getStatusColorResource(status)
+                    );
+
+            ColorStateList colorStateList =
+                    ColorStateList.valueOf(
+                            statusColor
+                    );
+
+            binding.prayerStatusChip
+                    .setTextColor(colorStateList);
+
+            binding.prayerStatusChip
+                    .setChipStrokeColor(
+                            colorStateList
+                    );
+        }
+
+        @ColorRes
+        private static int getStatusColorResource(
+                PrayerStatus status
+        ) {
+            switch (status) {
+                case ON_TIME:
+                    return R.color
+                            .prayer_status_on_time;
+
+                case LATE:
+                    return R.color
+                            .prayer_status_late;
+
+                case MISSED:
+                    return R.color
+                            .prayer_status_missed;
+
+                case UNRECORDED:
+                default:
+                    return R.color
+                            .prayer_status_unrecorded;
+            }
         }
 
         private static String getPrayerName(
@@ -225,14 +290,9 @@ public final class PrayerListAdapter
 
         private static String getStatusName(
                 Context context,
-                PrayerStatus prayerStatus
+                PrayerStatus status
         ) {
-            switch (prayerStatus) {
-                case UNRECORDED:
-                    return context.getString(
-                            R.string.status_unrecorded
-                    );
-
+            switch (status) {
                 case ON_TIME:
                     return context.getString(
                             R.string.status_on_time
@@ -248,10 +308,10 @@ public final class PrayerListAdapter
                             R.string.status_missed
                     );
 
+                case UNRECORDED:
                 default:
-                    throw new IllegalArgumentException(
-                            "Unknown prayer status: "
-                                    + prayerStatus
+                    return context.getString(
+                            R.string.status_unrecorded
                     );
             }
         }

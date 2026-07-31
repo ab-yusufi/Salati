@@ -216,4 +216,63 @@
     <string name="current_theme_format">
     Current theme: %1$s
 </string>
+    <string name="action_log_prayer">
+    Log Prayer
+</string>
+
+    <string name="action_edit">
+    Edit
+</string>
+
+    <string name="action_clear_record">
+    Clear Record
+</string>
+
+    <string name="action_undo">
+    Undo
+</string>
+
+    <string name="prayer_record_locked">
+    Saved and locked
+</string>
+
+    <string name="log_prayer_title_format">
+    Log %1$s
+</string>
+
+    <string name="edit_prayer_title_format">
+    Edit %1$s
+</string>
+
+    <string name="current_prayer_status_format">
+    Current status: %1$s
+</string>
+
+    <string name="prayer_saved_message">
+    %1$s saved as %2$s
+</string>
+
+    <string name="prayer_record_cleared_message">
+    %1$s record cleared
+</string>
+
+    <string name="prayer_change_undone_message">
+    %1$s change undone
+</string>
+
+    <string name="prayer_save_failed_message">
+    Could not save the %1$s prayer. Please try again.
+</string>
+
+    <string name="prayer_undo_failed_message">
+    Could not undo the %1$s change.
+</string>
+
+    <string name="log_prayer_content_description">
+    Log the %1$s prayer
+</string>
+
+    <string name="edit_prayer_content_description">
+    Edit the %1$s prayer. Current status: %2$s
+</string>
 </resources>

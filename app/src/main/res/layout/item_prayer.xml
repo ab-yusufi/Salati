@@ -6,7 +6,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardUseCompatPadding="true"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="20dp"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -15,76 +17,75 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/prayerNameText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            tools:text="Fajr" />
-
-        <TextView
-            android:id="@+id/prayerStatusText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="16sp"
-            tools:text="Status: Unrecorded" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/onTimeButton"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp"
                 android:layout_weight="1"
-                android:minWidth="0dp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="@string/action_on_time"
-                android:textSize="12sp" />
+                android:orientation="vertical">
 
-            <Button
-                android:id="@+id/lateButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="@string/action_late"
-                android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/prayerNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textStyle="bold"
+                    tools:text="Fajr" />
 
-            <Button
-                android:id="@+id/missedButton"
-                android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/lockedStatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:drawableStart="@drawable/ic_lock_16"
+                    android:drawablePadding="6dp"
+                    android:drawableTint="?attr/colorOnSurfaceVariant"
+                    android:text="@string/prayer_record_locked"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/prayerStatusChip"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="@string/action_missed"
-                android:textSize="12sp" />
+                android:clickable="false"
+                android:focusable="false"
+                app:chipBackgroundColor="@android:color/transparent"
+                app:chipStrokeWidth="1dp"
+                tools:text="On Time" />
 
         </LinearLayout>
 
-        <Button
-            android:id="@+id/clearButton"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/logPrayerButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:layout_marginTop="4dp"
-            android:minWidth="0dp"
-            android:text="@string/action_clear"
-            android:visibility="gone" />
+            android:layout_marginTop="14dp"
+            android:minHeight="48dp"
+            android:text="@string/action_log_prayer" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/editPrayerButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="14dp"
+            android:minHeight="48dp"
+            android:text="@string/action_edit"
+            android:visibility="gone"
+            app:icon="@drawable/ic_edit_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorPrimary" />
 
     </LinearLayout>
 

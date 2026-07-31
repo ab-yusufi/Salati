@@ -121,6 +121,19 @@ public class TodayViewModel extends ViewModel {
                 AnswerSource.APP
         );
     }
+    public void setPrayerStatus(
+            PrayerType prayerType,
+            PrayerStatus prayerStatus,
+            PrayerRepository.OperationCallback callback
+    ) {
+        prayerRepository.setPrayerStatus(
+                today,
+                prayerType,
+                prayerStatus,
+                AnswerSource.APP,
+                callback
+        );
+    }
 
     public void setHabitStatus(
             long habitId,

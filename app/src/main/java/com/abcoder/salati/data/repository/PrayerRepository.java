@@ -17,12 +17,29 @@ import com.abcoder.salati.data.model.AnswerSource;
 import com.abcoder.salati.data.model.PrayerStatus;
 import com.abcoder.salati.data.model.PrayerType;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
 public final class PrayerRepository {
+    private static final String TAG =
+            "PrayerRepository";
+
+    public interface OperationCallback {
+
+        void onSuccess();
+
+        void onError(Exception exception);
+    }
 
     private final PrayerRecordDao prayerRecordDao;
     private final PrayerReminderSettingDao prayerReminderSettingDao;
     private final ExecutorService databaseExecutor;
 
+    private final Handler mainHandler =
+            new Handler(
+                    Looper.getMainLooper()
+            );
     public PrayerRepository(AppDatabase database) {
         prayerRecordDao = database.prayerRecordDao();
         prayerReminderSettingDao =
@@ -132,14 +149,53 @@ public final class PrayerRepository {
             PrayerStatus prayerStatus,
             AnswerSource answerSource
     ) {
-        databaseExecutor.execute(() ->
+        setPrayerStatus(
+                recordDate,
+                prayerType,
+                prayerStatus,
+                answerSource,
+                null
+        );
+    }
+
+    public void setPrayerStatus(
+            String recordDate,
+            PrayerType prayerType,
+            PrayerStatus prayerStatus,
+            AnswerSource answerSource,
+            OperationCallback callback
+    ) {
+        databaseExecutor.execute(() -> {
+            try {
                 setPrayerStatusBlocking(
                         recordDate,
                         prayerType,
                         prayerStatus,
                         answerSource
-                )
-        );
+                );
+
+                if (callback != null) {
+                    mainHandler.post(
+                            callback::onSuccess
+                    );
+                }
+
+            } catch (Exception exception) {
+                Log.e(
+                        TAG,
+                        "Could not update prayer status",
+                        exception
+                );
+
+                if (callback != null) {
+                    mainHandler.post(
+                            () -> callback.onError(
+                                    exception
+                            )
+                    );
+                }
+            }
+        });
     }
 
     /**
