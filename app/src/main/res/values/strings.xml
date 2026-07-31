@@ -143,17 +143,17 @@
     Notifications were not enabled. You can change this later in Prayer Reminder Settings.
 </string>
 
-    <string name="notification_status_title">
-    Notification Access
-</string>
+<!--    <string name="notification_status_title">-->
+<!--    Notification Access-->
+<!--</string>-->
 
-    <string name="notification_status_enabled">
-    Notifications are enabled for Salati.
-</string>
+<!--    <string name="notification_status_enabled">-->
+<!--    Notifications are enabled for Salati.-->
+<!--</string>-->
 
-    <string name="notification_status_disabled">
-    Notifications are disabled. Reminder notifications cannot appear until they are enabled.
-</string>
+<!--    <string name="notification_status_disabled">-->
+<!--    Notifications are disabled. Reminder notifications cannot appear until they are enabled.-->
+<!--</string>-->
 
     <string name="notification_action_allow">
     Allow Notifications
@@ -471,5 +471,165 @@
 </string>
     <string name="calendar_history_edit_hint">
     Prayer records and existing habit records can be updated for today and past dates. Future dates are unavailable.
+</string>
+    <string name="insights_no_data_title">
+    No tracking data yet
+</string>
+
+    <string name="insights_no_data_message">
+    Record prayers or habits to see weekly and monthly insights here.
+</string>
+
+    <string name="insights_prayer_rate_format">
+    %1$.0f%% on time
+</string>
+
+    <string name="insights_prayer_rate_content_description">
+    %1$.0f percent of answered prayers were on time
+</string>
+
+    <string name="insights_tracked_days_format">
+    %1$d tracked days
+</string>
+
+    <string name="insights_prayer_counts_format">
+    %1$d On Time · %2$d Late · %3$d Missed · %4$d Unrecorded
+</string>
+
+    <string name="insights_no_prayer_data">
+    No prayer history exists in this period.
+</string>
+
+    <string name="insights_habit_rate_format">
+    %1$.0f%% completed
+</string>
+
+    <string name="insights_habit_rate_content_description">
+    %1$.0f percent of answered habits were completed
+</string>
+
+    <string name="insights_tracked_habit_records_format">
+    %1$d tracked habit records
+</string>
+
+    <string name="insights_habit_counts_format">
+    %1$d Completed · %2$d Not Completed · %3$d Pending
+</string>
+
+    <string name="insights_no_habit_data">
+    No habit history exists in this period.
+</string>
+
+    <string name="insights_no_daily_data">
+    No daily history exists in this period.
+</string>
+    <string name="settings_tracking_section">
+    Tracking and Reminders
+</string>
+
+    <string name="settings_prayer_reminders_title">
+    Prayer Reminders
+</string>
+
+    <string name="settings_prayer_reminders_summary">
+    Configure the fixed reminder time and enabled state for each prayer.
+</string>
+
+    <string name="settings_habits_title">
+    Habit Management
+</string>
+
+    <string name="settings_habits_summary">
+    Create, edit, enable, disable, and schedule up to five active habits.
+</string>
+
+    <string name="settings_notifications_section">
+    Notifications
+</string>
+
+    <string name="notification_status_title">
+    Notification Status
+</string>
+
+    <string name="notification_status_enabled">
+    Enabled
+</string>
+
+    <string name="notification_status_disabled">
+    Disabled
+</string>
+
+    <string name="settings_notifications_enabled_summary">
+    Prayer and habit reminders can be displayed.
+</string>
+
+    <string name="settings_notifications_disabled_summary">
+    Reminders cannot appear until notifications are enabled.
+</string>
+
+    <string name="manage_notifications">
+    Manage Notifications
+</string>
+
+    <string name="allow_notifications">
+    Allow Notifications
+</string>
+
+    <string name="open_notification_settings">
+    Open Notification Settings
+</string>
+
+    <string name="settings_notification_explanation">
+    Salati needs notification permission to show your configured prayer and habit reminders. Notifications are generated locally on this device.
+</string>
+
+    <string name="settings_notifications_enabled_message">
+    Notifications enabled.
+</string>
+
+    <string name="settings_notifications_denied_message">
+    Notifications remain disabled. You can enable them from Android Settings.
+</string>
+
+    <string name="settings_appearance_section">
+    Appearance
+</string>
+
+    <string name="settings_about_section">
+    About
+</string>
+
+    <string name="about_salati">
+    About Salati
+</string>
+
+    <string name="privacy_information">
+    Privacy Information
+</string>
+
+    <string name="app_version_format">
+    Version %1$s
+</string>
+
+    <string name="about_salati_message">
+    Salati version %1$s
+
+Salati is an offline prayer and habit tracker designed for deliberate daily recording, configurable reminders, calendar history, and personal insights.
+
+Salati does not calculate prayer times. Prayer reminders use the fixed times configured by you.
+</string>
+
+    <string name="privacy_information_message">
+    Salati does not require an account, cloud service, or location permission.
+
+Prayer records, habit records, reminder settings, and appearance preferences are stored locally by the app.
+
+Salati does not send your tracking data to a Salati server. Android device-backup behavior depends on your device and system backup settings.
+
+Deleting the app may remove its locally stored data.
+</string>
+
+    <string name="close">
+    Close
 </string>
 </resources>
