@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission
+        android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <application
+        android:name=".SalatiApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Salati">
+        <activity
+            android:name=".ui.reports.ReportsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.habits.HabitManagementActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name=".reminder.habit.HabitAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".reminder.habit.HabitActionReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".reminder.habit.HabitSystemEventReceiver"
+            android:enabled="true"
+            android:exported="false">
+
+            <intent-filter>
+                <action
+                    android:name="android.intent.action.BOOT_COMPLETED" />
+
+                <action
+                    android:name="android.intent.action.TIME_SET" />
+
+                <action
+                    android:name="android.intent.action.TIMEZONE_CHANGED" />
+
+                <action
+                    android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+
+        </receiver>
+        <receiver
+            android:name=".reminder.prayer.PrayerAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".reminder.prayer.PrayerActionReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".reminder.prayer.PrayerSystemEventReceiver"
+            android:enabled="true"
+            android:exported="false">
+
+            <intent-filter>
+                <action
+                    android:name="android.intent.action.BOOT_COMPLETED" />
+
+                <action
+                    android:name="android.intent.action.TIME_SET" />
+
+                <action
+                    android:name="android.intent.action.TIMEZONE_CHANGED" />
+
+                <action
+                    android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+
+        </receiver>
+        <activity
+            android:name=".ui.settings.PrayerSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

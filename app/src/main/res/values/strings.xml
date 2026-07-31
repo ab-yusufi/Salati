@@ -1,0 +1,124 @@
+<resources>
+    <string name="app_name">Salati</string>
+    <string name="setup_title">Salati</string>
+    <string name="setup_status">Project setup is ready</string>
+    <string name="test_button">Test Project</string>
+    <string name="test_success">Everything is Working</string>
+    <string name="test_database">Test Database</string>
+    <string name="database_test_ready">Room database is ready to test.</string>
+    <string name="database_test_running">Saving and reading a prayer record…</string>
+    <string name="database_test_success">Saved and read: %1$s — %2$s</string>
+    <string name="database_test_failed">Database test failed: %1$s</string>
+    <string name="architecture_test_ready">Repository and ViewModel are ready to test.</string>
+    <string name="test_architecture">Test Repository</string>
+    <string name="architecture_test_running">Saving Dhuhr through the ViewModel…</string>
+    <string name="architecture_test_success">Observed through LiveData: %1$s — %2$s</string>
+
+    <string name="today_title">Today</string>
+
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+
+    <string name="status_unrecorded">Unrecorded</string>
+    <string name="status_on_time">On Time</string>
+    <string name="status_late">Late</string>
+    <string name="status_missed">Missed</string>
+
+    <string name="prayer_status_format">Status: %1$s</string>
+
+    <string name="action_on_time">On Time</string>
+    <string name="action_late">Late</string>
+    <string name="action_missed">Missed</string>
+    <string name="action_clear">Clear</string>
+
+    <string name="open_prayer_settings">Prayer Reminder Settings</string>
+    <string name="prayer_settings_title">Prayer Reminders</string>
+    <string name="prayer_settings_description">These are fixed check-in times, not calculated prayer times.</string>
+    <string name="action_back">Back</string>
+    <string name="action_change_time">Change Time</string>
+    <string name="reminder_enabled">Reminder enabled</string>
+    <string name="reminder_time_format">Reminder: %1$s</string>
+
+    <string name="prayer_notification_channel_name">Prayer reminders</string>
+    <string name="prayer_notification_channel_description">Notifications used to record daily prayer status.</string>
+
+    <string name="prayer_notification_title">%1$s prayer check-in</string>
+    <string name="prayer_notification_message">How was your %1$s prayer?</string>
+
+    <string name="schedule_test_reminder">Schedule Test Isha Reminder</string>
+    <string name="test_reminder_scheduled">Test reminder requested for approximately %1$s.</string>
+    <string name="notification_permission_denied">Notification permission was not granted.</string>
+    <string name="notifications_disabled">Notifications are currently disabled for this app.</string>
+    <string name="test_reminder_schedule_failed">Could not schedule the test reminder.</string>
+
+    <string name="habits_title">Habits</string>
+    <string name="manage_habits">Manage Habits</string>
+    <string name="no_habits_today">No active habits. Add one when you are ready.</string>
+
+    <string name="habit_status_format">Status: %1$s</string>
+    <string name="habit_reminder_format">Reminder: %1$s</string>
+
+    <string name="habit_status_pending">Pending</string>
+    <string name="habit_status_completed">Completed</string>
+    <string name="habit_status_not_completed">Not Completed</string>
+
+    <string name="action_completed">Completed</string>
+    <string name="action_not_completed">Not Completed</string>
+    <string name="action_remind_later">Remind Me Later</string>
+
+    <string name="habit_management_title">Manage Habits</string>
+    <string name="habit_management_description">Create up to five active daily habits.</string>
+    <string name="add_habit">Add Habit</string>
+    <string name="edit_habit">Edit Habit</string>
+    <string name="delete_habit">Delete Habit</string>
+    <string name="no_habits_created">No habits have been created.</string>
+
+    <string name="habit_title_label">Habit title</string>
+    <string name="habit_title_example">Daily Quran Reading</string>
+    <string name="habit_reminder_time">Reminder Time</string>
+    <string name="habit_enabled">Habit enabled</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+
+    <string name="habit_title_required">Enter a habit title.</string>
+    <string name="habit_limit_reached">You can enable a maximum of five habits.</string>
+    <string name="habit_save_failed">Could not save habit: %1$s</string>
+    <string name="habit_delete_failed">Could not delete habit: %1$s</string>
+    <string name="delete_habit_confirmation">Delete “%1$s” and all of its tracking history?</string>
+
+    <string name="habit_notification_channel_name">Habit reminders</string>
+    <string name="habit_notification_channel_description">Daily reminders for optional habits.</string>
+    <string name="habit_notification_message">Did you complete this habit today?</string>
+
+    <string name="open_reports">Reports and Statistics</string>
+    <string name="reports_title">Reports</string>
+    <string name="weekly">Weekly</string>
+    <string name="monthly">Monthly</string>
+    <string name="previous_period">Previous</string>
+    <string name="next_period">Next</string>
+
+    <string name="prayer_statistics_title">Prayer Statistics</string>
+    <string name="prayer_breakdown_title">Prayer Breakdown</string>
+
+    <string name="habit_statistics_title">Habit Statistics</string>
+    <string name="habit_breakdown_title">Habit Breakdown</string>
+
+    <string name="daily_breakdown_title">Daily Breakdown</string>
+    <string name="no_report_data">No tracking data is available for this period.</string>
+
+    <string name="prayer_summary_format">Tracked days: %1$d\nOn time: %2$d\nLate: %3$d\nMissed: %4$d\nUnrecorded: %5$d\nOn-time rate: %6$.1f%%</string>
+
+    <string name="prayer_breakdown_format">On time %1$d · Late %2$d · Missed %3$d · Unrecorded %4$d</string>
+
+    <string name="habit_summary_format">Tracked records: %1$d\nCompleted: %2$d\nNot completed: %3$d\nPending: %4$d\nCompletion rate: %5$.1f%%</string>
+
+    <string name="habit_breakdown_format">Tracked days: %1$d\nCompleted %2$d · Not completed %3$d · Pending %4$d\nCompletion rate: %5$.1f%%</string>
+
+    <string name="daily_prayer_format">Prayers — On time %1$d · Late %2$d · Missed %3$d · Unrecorded %4$d</string>
+
+    <string name="daily_habit_format">Habits — Completed %1$d · Not completed %2$d · Pending %3$d</string>
+</resources>
