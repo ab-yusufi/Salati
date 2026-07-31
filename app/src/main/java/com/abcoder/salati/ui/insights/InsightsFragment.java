@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.abcoder.salati.util.DayRolloverScheduler;
 
 import com.abcoder.salati.R;
 import com.abcoder.salati.SalatiApplication;
@@ -23,6 +24,8 @@ import com.abcoder.salati.ui.reports.ReportsViewModelFactory;
 
 public final class InsightsFragment
         extends Fragment {
+    private DayRolloverScheduler
+            dayRolloverScheduler;
 
     private FragmentInsightsBinding binding;
 
@@ -65,9 +68,59 @@ public final class InsightsFragment
         );
 
         configureViewModel();
+        dayRolloverScheduler =
+                new DayRolloverScheduler(
+                        this::refreshForCurrentDate
+                );
         configureLists();
         configureControls();
         observeUiState();
+    }
+    private void refreshForCurrentDate() {
+        if (viewModel != null) {
+            viewModel.refreshForCurrentDate();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        updateDayRolloverMonitoring();
+    }
+
+    @Override
+    public void onPause() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
+
+        super.onPause();
+    }
+
+    @Override
+    public void onHiddenChanged(
+            boolean hidden
+    ) {
+        super.onHiddenChanged(hidden);
+
+        updateDayRolloverMonitoring();
+    }
+
+    private void updateDayRolloverMonitoring() {
+        if (dayRolloverScheduler == null
+                || viewModel == null) {
+
+            return;
+        }
+
+        if (isResumed() && !isHidden()) {
+            refreshForCurrentDate();
+            dayRolloverScheduler.start();
+
+        } else {
+            dayRolloverScheduler.stop();
+        }
     }
 
     private void configureViewModel() {
@@ -439,6 +492,9 @@ public final class InsightsFragment
 
     @Override
     public void onDestroyView() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
         binding.prayerBreakdownList
                 .setAdapter(null);
 
@@ -451,6 +507,7 @@ public final class InsightsFragment
         prayerStatisticsAdapter = null;
         habitStatisticsAdapter = null;
         dailyStatisticsAdapter = null;
+        dayRolloverScheduler = null;
         binding = null;
 
         super.onDestroyView();

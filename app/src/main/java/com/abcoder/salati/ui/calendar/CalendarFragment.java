@@ -31,6 +31,7 @@ import com.abcoder.salati.ui.today.PrayerListAdapter;
 import com.abcoder.salati.ui.today.TodayHabitAdapter;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
+import com.abcoder.salati.util.DayRolloverScheduler;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -64,6 +65,8 @@ public class CalendarFragment
     private CalendarDayAdapter calendarAdapter;
     private PrayerListAdapter selectedPrayerAdapter;
     private TodayHabitAdapter selectedHabitAdapter;
+    private DayRolloverScheduler
+            dayRolloverScheduler;
 
     private YearMonth displayedMonth =
             YearMonth.now();
@@ -182,6 +185,10 @@ public class CalendarFragment
                 view,
                 savedInstanceState
         );
+        dayRolloverScheduler =
+                new DayRolloverScheduler(
+                        this::refreshForCurrentDate
+                );
 
         configureCalendarGrid();
         configureSelectedDayLists();
@@ -235,6 +242,14 @@ public class CalendarFragment
     }
 
     private void observeCalendarState() {
+        viewModel.getCurrentDate()
+                .observe(
+                        getViewLifecycleOwner(),
+                        date -> {
+                            updateMonthHeader();
+                            rebuildCalendarGrid();
+                        }
+                );
         viewModel.getDisplayedMonth()
                 .observe(
                         getViewLifecycleOwner(),
@@ -462,7 +477,7 @@ public class CalendarFragment
                 );
 
         LocalDate today =
-                LocalDate.now();
+                viewModel.getToday();
 
         List<CalendarDayItem> cells =
                 new ArrayList<>();
@@ -743,6 +758,9 @@ public class CalendarFragment
 
     @Override
     public void onDestroyView() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
         binding.calendarGrid.setAdapter(null);
         binding.selectedPrayerList.setAdapter(null);
         binding.selectedHabitList.setAdapter(null);
@@ -750,6 +768,7 @@ public class CalendarFragment
         calendarAdapter = null;
         selectedPrayerAdapter = null;
         selectedHabitAdapter = null;
+        dayRolloverScheduler = null;
         binding = null;
 
         super.onDestroyView();
@@ -800,7 +819,7 @@ public class CalendarFragment
 
         if (actionDate == null
                 || actionDate.isAfter(
-                LocalDate.now()
+                viewModel.getToday()
         )) {
             return;
         }
@@ -1074,7 +1093,7 @@ public class CalendarFragment
 
         if (actionDate == null
                 || actionDate.isAfter(
-                LocalDate.now()
+                viewModel.getToday()
         )) {
             return;
         }
@@ -1331,5 +1350,51 @@ public class CalendarFragment
                 message,
                 Snackbar.LENGTH_LONG
         ).show();
+    }
+    private void refreshForCurrentDate() {
+        if (viewModel != null) {
+            viewModel.refreshForCurrentDate();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        updateDayRolloverMonitoring();
+    }
+
+    @Override
+    public void onPause() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
+
+        super.onPause();
+    }
+
+    @Override
+    public void onHiddenChanged(
+            boolean hidden
+    ) {
+        super.onHiddenChanged(hidden);
+
+        updateDayRolloverMonitoring();
+    }
+
+    private void updateDayRolloverMonitoring() {
+        if (dayRolloverScheduler == null
+                || viewModel == null) {
+
+            return;
+        }
+
+        if (isResumed() && !isHidden()) {
+            refreshForCurrentDate();
+            dayRolloverScheduler.start();
+
+        } else {
+            dayRolloverScheduler.stop();
+        }
     }
 }

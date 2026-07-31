@@ -28,6 +28,7 @@ import com.abcoder.salati.data.model.PrayerStatus;
 import com.abcoder.salati.data.model.PrayerType;
 import com.abcoder.salati.data.repository.HabitRepository;
 import com.abcoder.salati.data.repository.PrayerRepository;
+import java.time.YearMonth;
 
 public final class ReportsViewModel
         extends ViewModel {
@@ -53,9 +54,10 @@ public final class ReportsViewModel
 
     private ReportsUiState.Period selectedPeriod =
             ReportsUiState.Period.WEEK;
-
-    private LocalDate anchorDate =
+    private LocalDate currentDate =
             LocalDate.now();
+    private LocalDate anchorDate =
+            currentDate;
 
     private List<PrayerRecord>
             latestPrayerRecords =
@@ -146,7 +148,35 @@ public final class ReportsViewModel
     public LiveData<ReportsUiState> getUiState() {
         return uiState;
     }
+    public boolean refreshForCurrentDate() {
+        LocalDate newDate =
+                LocalDate.now();
 
+        if (newDate.equals(currentDate)) {
+            return false;
+        }
+
+        boolean viewingCurrentPeriod =
+                isSameReportingPeriod(
+                        anchorDate,
+                        currentDate,
+                        selectedPeriod
+                );
+
+        currentDate = newDate;
+
+        /*
+         * Follow the newly current week or month only when the
+         * user was viewing the previous current period.
+         */
+        if (viewingCurrentPeriod) {
+            anchorDate = newDate;
+        }
+
+        updateSelectedRange();
+
+        return true;
+    }
     public void selectWeek() {
         if (selectedPeriod
                 == ReportsUiState.Period.WEEK) {
@@ -156,7 +186,7 @@ public final class ReportsViewModel
         selectedPeriod =
                 ReportsUiState.Period.WEEK;
 
-        anchorDate = LocalDate.now();
+        anchorDate = currentDate;
 
         updateSelectedRange();
     }
@@ -170,7 +200,7 @@ public final class ReportsViewModel
         selectedPeriod =
                 ReportsUiState.Period.MONTH;
 
-        anchorDate = LocalDate.now();
+        anchorDate = currentDate;
 
         updateSelectedRange();
     }
@@ -201,6 +231,40 @@ public final class ReportsViewModel
         updateSelectedRange();
     }
 
+    private boolean isSameReportingPeriod(
+            LocalDate firstDate,
+            LocalDate secondDate,
+            ReportsUiState.Period period
+    ) {
+        if (period
+                == ReportsUiState.Period.WEEK) {
+
+            LocalDate firstWeekStart =
+                    firstDate.with(
+                            TemporalAdjusters
+                                    .previousOrSame(
+                                            DayOfWeek.MONDAY
+                                    )
+                    );
+
+            LocalDate secondWeekStart =
+                    secondDate.with(
+                            TemporalAdjusters
+                                    .previousOrSame(
+                                            DayOfWeek.MONDAY
+                                    )
+                    );
+
+            return firstWeekStart.equals(
+                    secondWeekStart
+            );
+        }
+
+        return YearMonth.from(firstDate)
+                .equals(
+                        YearMonth.from(secondDate)
+                );
+    }
     private void updateSelectedRange() {
         /*
          * Prevent old records from briefly appearing under the
@@ -226,7 +290,7 @@ public final class ReportsViewModel
             ReportsUiState.Period period,
             LocalDate anchor
     ) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = currentDate;
 
         LocalDate startDate;
         LocalDate nominalEndDate;
@@ -290,7 +354,7 @@ public final class ReportsViewModel
     }
 
     private boolean canMoveNext() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = currentDate;
 
         if (selectedPeriod
                 == ReportsUiState.Period.WEEK) {

@@ -25,7 +25,11 @@ public final class CalendarViewModel
 
     private final PrayerRepository prayerRepository;
     private final HabitRepository habitRepository;
-
+    private final MutableLiveData<LocalDate>
+            currentDate =
+            new MutableLiveData<>(
+                    LocalDate.now()
+            );
     private final MutableLiveData<YearMonth>
             displayedMonth =
             new MutableLiveData<>(
@@ -120,7 +124,7 @@ public final class CalendarViewModel
                              * history that did not exist.
                              */
                             if (date.equals(
-                                    LocalDate.now()
+                                    getToday()
                             )) {
                                 habitRepository
                                         .ensureRecordsForDate(
@@ -139,6 +143,57 @@ public final class CalendarViewModel
                 habitRepository.observeAllHabits();
     }
 
+    public LiveData<LocalDate>
+    getCurrentDate() {
+        return currentDate;
+    }
+
+    public LocalDate getToday() {
+        LocalDate value =
+                currentDate.getValue();
+
+        return value == null
+                ? LocalDate.now()
+                : value;
+    }
+
+    public boolean refreshForCurrentDate() {
+        LocalDate previousDate =
+                getToday();
+
+        LocalDate newDate =
+                LocalDate.now();
+
+        if (newDate.equals(previousDate)) {
+            return false;
+        }
+
+        LocalDate currentSelection =
+                selectedDate.getValue();
+
+        boolean selectionFollowedToday =
+                currentSelection != null
+                        && currentSelection.equals(
+                        previousDate
+                );
+
+        currentDate.setValue(newDate);
+
+        /*
+         * Calendar follows the new date only when the user was
+         * looking at the previous "today". Historical selections
+         * remain selected.
+         */
+        if (selectionFollowedToday) {
+            displayedMonth.setValue(
+                    YearMonth.from(newDate)
+            );
+
+            selectedDate.setValue(newDate);
+        }
+
+        return true;
+    }
     public LiveData<YearMonth>
     getDisplayedMonth() {
         return displayedMonth;
@@ -179,7 +234,7 @@ public final class CalendarViewModel
     ) {
         if (date == null
                 || date.isAfter(
-                LocalDate.now()
+                getToday()
         )) {
             return;
         }
@@ -201,7 +256,7 @@ public final class CalendarViewModel
 
     public void showToday() {
         selectDate(
-                LocalDate.now()
+                getToday()
         );
     }
     public void setPrayerStatus(
@@ -263,7 +318,7 @@ public final class CalendarViewModel
     ) {
         return date != null
                 && !date.isAfter(
-                LocalDate.now()
+                getToday()
         );
     }
     public boolean canShowNextMonth() {
@@ -272,7 +327,9 @@ public final class CalendarViewModel
 
         return current != null
                 && current.isBefore(
-                YearMonth.now()
+                YearMonth.from(
+                        getToday()
+                )
         );
     }
 
@@ -291,7 +348,7 @@ public final class CalendarViewModel
 
         if (currentSelection == null) {
             currentSelection =
-                    LocalDate.now();
+                    getToday();
         }
 
         YearMonth targetMonth =
@@ -319,7 +376,7 @@ public final class CalendarViewModel
                 );
 
         if (targetDate.isAfter(
-                LocalDate.now()
+                getToday()
         )) {
             targetDate = LocalDate.now();
         }

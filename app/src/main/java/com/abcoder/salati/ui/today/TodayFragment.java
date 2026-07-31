@@ -34,6 +34,8 @@ import com.abcoder.salati.data.model.HabitStatus;
 import com.abcoder.salati.data.repository.HabitRepository;
 import com.abcoder.salati.databinding.BottomSheetHabitStatusBinding;
 
+import com.abcoder.salati.util.DayRolloverScheduler;
+
 public class TodayFragment extends Fragment {
 
     private FragmentTodayBinding binding;
@@ -43,6 +45,11 @@ public class TodayFragment extends Fragment {
     private PrayerListAdapter prayerListAdapter;
     private TodayHabitAdapter habitAdapter;
     private WeekDayAdapter weekDayAdapter;
+
+    private DayRolloverScheduler
+            dayRolloverScheduler;
+
+    private BottomSheetDialog activeStatusDialog;
 
     private int recordedPrayerCount;
     private int totalHabitCount;
@@ -75,11 +82,18 @@ public class TodayFragment extends Fragment {
                 savedInstanceState
         );
 
+
+
         configureViewModel();
+
+        dayRolloverScheduler =
+                new DayRolloverScheduler(
+                        this::refreshForCurrentDate
+                );
         configureWeekDayList();
         configurePrayerList();
         configureHabitList();
-        configureDate();
+        observeCurrentDate();
         observePrayerRecords();
         observeHabitRecords();
     }
@@ -147,10 +161,23 @@ public class TodayFragment extends Fragment {
         );
     }
 
-    private void configureDate() {
-        binding.todayDateText.setText(
-                todayViewModel.getDisplayDate()
-        );
+    private void observeCurrentDate() {
+        todayViewModel.getCurrentDate()
+                .observe(
+                        getViewLifecycleOwner(),
+                        date -> {
+                            binding.todayDateText.setText(
+                                    todayViewModel
+                                            .getDisplayDate()
+                            );
+
+                            weekDayAdapter.submitList(
+                                    createCurrentWeek(
+                                            date
+                                    )
+                            );
+                        }
+                );
     }
 
     private void observePrayerRecords() {
@@ -215,6 +242,15 @@ public class TodayFragment extends Fragment {
                 new BottomSheetDialog(
                         requireContext()
                 );
+        activeStatusDialog = dialog;
+
+        dialog.setOnDismissListener(
+                ignored -> {
+                    if (activeStatusDialog == dialog) {
+                        activeStatusDialog = null;
+                    }
+                }
+        );
 
         dialog.setContentView(
                 sheetBinding.getRoot()
@@ -532,6 +568,13 @@ public class TodayFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
+
+        if (activeStatusDialog != null) {
+            activeStatusDialog.dismiss();
+        }
         binding.weekDayList.setAdapter(null);
         binding.prayerList.setAdapter(null);
         binding.habitList.setAdapter(null);
@@ -539,6 +582,8 @@ public class TodayFragment extends Fragment {
         weekDayAdapter = null;
         prayerListAdapter = null;
         habitAdapter = null;
+        dayRolloverScheduler = null;
+        activeStatusDialog = null;
         binding = null;
 
         super.onDestroyView();
@@ -562,13 +607,11 @@ public class TodayFragment extends Fragment {
                 weekDayAdapter
         );
 
-        weekDayAdapter.submitList(
-                createCurrentWeek()
-        );
+
 
     }
-    private List<WeekDayItem> createCurrentWeek() {
-        LocalDate today = LocalDate.now();
+    private List<WeekDayItem> createCurrentWeek(LocalDate today) {
+
 
         LocalDate monday =
                 today.with(
@@ -806,6 +849,15 @@ public class TodayFragment extends Fragment {
                 new BottomSheetDialog(
                         requireContext()
                 );
+        activeStatusDialog = dialog;
+
+        dialog.setOnDismissListener(
+                ignored -> {
+                    if (activeStatusDialog == dialog) {
+                        activeStatusDialog = null;
+                    }
+                }
+        );
 
         dialog.setContentView(
                 sheetBinding.getRoot()
@@ -898,6 +950,7 @@ public class TodayFragment extends Fragment {
 
         dialog.show();
     }
+
 
     private void saveHabitStatus(
             BottomSheetDialog dialog,
@@ -1049,5 +1102,64 @@ public class TodayFragment extends Fragment {
         );
 
         snackbar.show();
+    }
+    private void refreshForCurrentDate() {
+        if (todayViewModel == null) {
+            return;
+        }
+
+        boolean dateChanged =
+                todayViewModel
+                        .refreshDateIfNeeded();
+
+        /*
+         * Prevent a sheet opened before midnight from saving
+         * yesterday's visible choice into the new date.
+         */
+        if (dateChanged
+                && activeStatusDialog != null) {
+
+            activeStatusDialog.dismiss();
+        }
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        updateDayRolloverMonitoring();
+    }
+
+    @Override
+    public void onPause() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
+
+        super.onPause();
+    }
+
+    @Override
+    public void onHiddenChanged(
+            boolean hidden
+    ) {
+        super.onHiddenChanged(hidden);
+
+        updateDayRolloverMonitoring();
+    }
+
+    private void updateDayRolloverMonitoring() {
+        if (dayRolloverScheduler == null
+                || todayViewModel == null) {
+
+            return;
+        }
+
+        if (isResumed() && !isHidden()) {
+            refreshForCurrentDate();
+            dayRolloverScheduler.start();
+
+        } else {
+            dayRolloverScheduler.stop();
+        }
     }
 }

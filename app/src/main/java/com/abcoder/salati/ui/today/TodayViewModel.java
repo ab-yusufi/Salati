@@ -2,15 +2,8 @@ package com.abcoder.salati.ui.today;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 import com.abcoder.salati.data.entity.Habit;
 import com.abcoder.salati.data.entity.HabitRecord;
@@ -22,19 +15,41 @@ import com.abcoder.salati.data.model.PrayerType;
 import com.abcoder.salati.data.repository.HabitRepository;
 import com.abcoder.salati.data.repository.PrayerRepository;
 
-public class TodayViewModel extends ViewModel {
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+public class TodayViewModel
+        extends ViewModel {
 
     private final PrayerRepository prayerRepository;
     private final HabitRepository habitRepository;
 
-    private final String today;
+    private final MutableLiveData<LocalDate>
+            currentDate =
+            new MutableLiveData<>(
+                    LocalDate.now()
+            );
 
-    private final LiveData<List<PrayerRecord>>
-            todayPrayerRecords;
+    private final MediatorLiveData<
+            List<PrayerRecord>>
+            todayPrayerRecords =
+            new MediatorLiveData<>();
 
-    private final MediatorLiveData<List<HabitTodayItem>>
+    private final MediatorLiveData<
+            List<HabitTodayItem>>
             todayHabitItems =
             new MediatorLiveData<>();
+
+    private LiveData<List<PrayerRecord>>
+            activePrayerSource;
+
+    private LiveData<List<HabitRecord>>
+            activeHabitRecordSource;
 
     private List<Habit> enabledHabits =
             new ArrayList<>();
@@ -46,41 +61,33 @@ public class TodayViewModel extends ViewModel {
             PrayerRepository prayerRepository,
             HabitRepository habitRepository
     ) {
-        this.prayerRepository = prayerRepository;
-        this.habitRepository = habitRepository;
+        this.prayerRepository =
+                prayerRepository;
 
-        today = LocalDate.now().toString();
-
-        todayPrayerRecords =
-                prayerRepository.observeForDate(today);
-
-        prayerRepository
-                .ensurePrayerRecordsForDate(today);
-
-        habitRepository.ensureRecordsForDate(today);
-
-        todayHabitItems.addSource(
-                habitRepository.observeEnabledHabits(),
-                habits -> {
-                    enabledHabits = habits == null
-                            ? new ArrayList<>()
-                            : habits;
-
-                    rebuildHabitItems();
-                }
-        );
+        this.habitRepository =
+                habitRepository;
 
         todayHabitItems.addSource(
                 habitRepository
-                        .observeRecordsForDate(today),
-                records -> {
-                    todayHabitRecords = records == null
-                            ? new ArrayList<>()
-                            : records;
+                        .observeEnabledHabits(),
+                habits -> {
+                    enabledHabits =
+                            habits == null
+                                    ? new ArrayList<>()
+                                    : habits;
 
                     rebuildHabitItems();
                 }
         );
+
+        switchDateSources(
+                getCurrentDateValue()
+        );
+    }
+
+    public LiveData<LocalDate>
+    getCurrentDate() {
+        return currentDate;
     }
 
     public LiveData<List<PrayerRecord>>
@@ -93,21 +100,40 @@ public class TodayViewModel extends ViewModel {
         return todayHabitItems;
     }
 
+    /**
+     * Returns true only when the device date changed.
+     */
+    public boolean refreshDateIfNeeded() {
+        LocalDate newDate =
+                LocalDate.now();
+
+        LocalDate previousDate =
+                getCurrentDateValue();
+
+        if (newDate.equals(previousDate)) {
+            return false;
+        }
+
+        currentDate.setValue(newDate);
+        switchDateSources(newDate);
+
+        return true;
+    }
+
     public String getToday() {
-        return today;
+        return getCurrentDateValue()
+                .toString();
     }
 
     public String getDisplayDate() {
-        LocalDate localDate =
-                LocalDate.parse(today);
-
         DateTimeFormatter formatter =
                 DateTimeFormatter.ofPattern(
                         "EEEE, d MMMM yyyy",
                         Locale.getDefault()
                 );
 
-        return localDate.format(formatter);
+        return getCurrentDateValue()
+                .format(formatter);
     }
 
     public void setPrayerStatus(
@@ -115,19 +141,20 @@ public class TodayViewModel extends ViewModel {
             PrayerStatus prayerStatus
     ) {
         prayerRepository.setPrayerStatus(
-                today,
+                getToday(),
                 prayerType,
                 prayerStatus,
                 AnswerSource.APP
         );
     }
+
     public void setPrayerStatus(
             PrayerType prayerType,
             PrayerStatus prayerStatus,
             PrayerRepository.OperationCallback callback
     ) {
         prayerRepository.setPrayerStatus(
-                today,
+                getToday(),
                 prayerType,
                 prayerStatus,
                 AnswerSource.APP,
@@ -141,11 +168,12 @@ public class TodayViewModel extends ViewModel {
     ) {
         habitRepository.setHabitStatus(
                 habitId,
-                today,
+                getToday(),
                 habitStatus,
                 AnswerSource.APP
         );
     }
+
     public void setHabitStatus(
             long habitId,
             HabitStatus habitStatus,
@@ -153,19 +181,107 @@ public class TodayViewModel extends ViewModel {
     ) {
         habitRepository.setHabitStatus(
                 habitId,
-                today,
+                getToday(),
                 habitStatus,
                 AnswerSource.APP,
                 callback
         );
     }
 
+    private void switchDateSources(
+            LocalDate date
+    ) {
+        String dateValue =
+                date.toString();
+
+        if (activePrayerSource != null) {
+            todayPrayerRecords.removeSource(
+                    activePrayerSource
+            );
+        }
+
+        if (activeHabitRecordSource != null) {
+            todayHabitItems.removeSource(
+                    activeHabitRecordSource
+            );
+        }
+
+        /*
+         * Clear yesterday's values immediately while Room loads
+         * the newly selected date.
+         */
+        todayPrayerRecords.setValue(
+                new ArrayList<>()
+        );
+
+        todayHabitRecords =
+                new ArrayList<>();
+
+        rebuildHabitItems();
+
+        prayerRepository
+                .ensurePrayerRecordsForDate(
+                        dateValue
+                );
+
+        habitRepository.ensureRecordsForDate(
+                dateValue
+        );
+
+        activePrayerSource =
+                prayerRepository.observeForDate(
+                        dateValue
+                );
+
+        todayPrayerRecords.addSource(
+                activePrayerSource,
+                records ->
+                        todayPrayerRecords.setValue(
+                                records == null
+                                        ? new ArrayList<>()
+                                        : records
+                        )
+        );
+
+        activeHabitRecordSource =
+                habitRepository
+                        .observeRecordsForDate(
+                                dateValue
+                        );
+
+        todayHabitItems.addSource(
+                activeHabitRecordSource,
+                records -> {
+                    todayHabitRecords =
+                            records == null
+                                    ? new ArrayList<>()
+                                    : records;
+
+                    rebuildHabitItems();
+                }
+        );
+    }
+
+    private LocalDate getCurrentDateValue() {
+        LocalDate date =
+                currentDate.getValue();
+
+        return date == null
+                ? LocalDate.now()
+                : date;
+    }
+
     private void rebuildHabitItems() {
         Map<Long, HabitRecord> recordMap =
                 new HashMap<>();
 
-        for (HabitRecord record : todayHabitRecords) {
-            recordMap.put(record.habitId, record);
+        for (HabitRecord record :
+                todayHabitRecords) {
+
+            recordMap.put(
+                    record.habitId,
+                    record
+            );
         }
 
         List<HabitTodayItem> items =
@@ -173,7 +289,9 @@ public class TodayViewModel extends ViewModel {
 
         for (Habit habit : enabledHabits) {
             HabitRecord record =
-                    recordMap.get(habit.id);
+                    recordMap.get(
+                            habit.id
+                    );
 
             if (record == null) {
                 items.add(
@@ -183,6 +301,7 @@ public class TodayViewModel extends ViewModel {
                                 0
                         )
                 );
+
             } else {
                 items.add(
                         new HabitTodayItem(
