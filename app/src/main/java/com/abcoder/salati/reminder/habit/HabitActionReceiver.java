@@ -7,10 +7,7 @@ import android.util.Log;
 
 import androidx.core.app.NotificationManagerCompat;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-
+import com.abcoder.salati.R;
 import com.abcoder.salati.SalatiApplication;
 import com.abcoder.salati.data.database.AppDatabase;
 import com.abcoder.salati.data.entity.Habit;
@@ -18,6 +15,12 @@ import com.abcoder.salati.data.entity.HabitRecord;
 import com.abcoder.salati.data.model.AnswerSource;
 import com.abcoder.salati.data.model.HabitStatus;
 import com.abcoder.salati.data.repository.HabitRepository;
+import com.abcoder.salati.notification
+        .NotificationAcknowledgmentHelper;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 public class HabitActionReceiver
         extends BroadcastReceiver {
@@ -35,7 +38,8 @@ public class HabitActionReceiver
             return;
         }
 
-        String action = intent.getAction();
+        String action =
+                intent.getAction();
 
         if (!HabitReminderContract
                 .ACTION_RECORD_HABIT
@@ -43,13 +47,16 @@ public class HabitActionReceiver
                 && !HabitReminderContract
                 .ACTION_SNOOZE_HABIT
                 .equals(action)) {
+
             return;
         }
 
-        long habitId = intent.getLongExtra(
-                HabitReminderContract.EXTRA_HABIT_ID,
-                -1L
-        );
+        long habitId =
+                intent.getLongExtra(
+                        HabitReminderContract
+                                .EXTRA_HABIT_ID,
+                        -1L
+                );
 
         String recordDate =
                 intent.getStringExtra(
@@ -67,11 +74,17 @@ public class HabitActionReceiver
         if (habitId < 1
                 || recordDate == null
                 || notificationId < 0) {
-            Log.e(TAG, "Invalid habit action");
+
+            Log.e(
+                    TAG,
+                    "Invalid habit action"
+            );
+
             return;
         }
 
-        PendingResult pendingResult = goAsync();
+        PendingResult pendingResult =
+                goAsync();
 
         Context appContext =
                 context.getApplicationContext();
@@ -140,22 +153,49 @@ public class HabitActionReceiver
             return;
         }
 
-        HabitStatus status;
+        final HabitStatus status;
 
         try {
             status =
-                    HabitStatus.valueOf(statusValue);
+                    HabitStatus.valueOf(
+                            statusValue
+                    );
 
         } catch (IllegalArgumentException exception) {
+            Log.e(
+                    TAG,
+                    "Unknown habit status: "
+                            + statusValue,
+                    exception
+            );
+
             return;
         }
 
         if (status != HabitStatus.COMPLETED
                 && status
                 != HabitStatus.NOT_COMPLETED) {
+
             return;
         }
 
+        Habit habit =
+                repository.getHabitBlocking(
+                        habitId
+                );
+
+        if (habit == null) {
+            NotificationManagerCompat
+                    .from(context)
+                    .cancel(notificationId);
+
+            return;
+        }
+
+        /*
+         * Do not acknowledge until the blocking Room operation
+         * completes successfully.
+         */
         repository.setHabitStatusBlocking(
                 habitId,
                 recordDate,
@@ -168,9 +208,24 @@ public class HabitActionReceiver
                 habitId
         );
 
-        NotificationManagerCompat
-                .from(context)
-                .cancel(notificationId);
+        NotificationAcknowledgmentHelper.show(
+                context,
+                HabitReminderContract.CHANNEL_ID,
+                notificationId,
+                context.getString(
+                        R.string
+                                .notification_habit_saved_title
+                ),
+                context.getString(
+                        R.string
+                                .notification_habit_saved_message,
+                        habit.title,
+                        getStatusName(
+                                context,
+                                status
+                        )
+                )
+        );
     }
 
     private void handleSnoozeAction(
@@ -181,7 +236,9 @@ public class HabitActionReceiver
             int notificationId
     ) {
         Habit habit =
-                repository.getHabitBlocking(habitId);
+                repository.getHabitBlocking(
+                        habitId
+                );
 
         HabitRecord record =
                 repository.getHabitRecordBlocking(
@@ -194,6 +251,11 @@ public class HabitActionReceiver
                 || record == null
                 || record.status
                 != HabitStatus.PENDING) {
+
+            NotificationManagerCompat
+                    .from(context)
+                    .cancel(notificationId);
+
             return;
         }
 
@@ -203,16 +265,31 @@ public class HabitActionReceiver
                         * 60_000L;
 
         LocalDate triggerDate =
-                Instant.ofEpochMilli(triggerAtMillis)
-                        .atZone(ZoneId.systemDefault())
+                Instant.ofEpochMilli(
+                                triggerAtMillis
+                        )
+                        .atZone(
+                                ZoneId.systemDefault()
+                        )
                         .toLocalDate();
 
         if (!triggerDate.toString()
                 .equals(recordDate)) {
 
-            NotificationManagerCompat
-                    .from(context)
-                    .cancel(notificationId);
+            NotificationAcknowledgmentHelper.show(
+                    context,
+                    HabitReminderContract.CHANNEL_ID,
+                    notificationId,
+                    context.getString(
+                            R.string
+                                    .notification_snooze_unavailable_title
+                    ),
+                    context.getString(
+                            R.string
+                                    .notification_snooze_unavailable_message,
+                            habit.title
+                    )
+            );
 
             return;
         }
@@ -224,17 +301,78 @@ public class HabitActionReceiver
                                 recordDate
                         );
 
-        if (allowed) {
-            HabitReminderScheduler.scheduleSnooze(
+        if (!allowed) {
+            NotificationAcknowledgmentHelper.show(
                     context,
-                    habitId,
-                    recordDate,
-                    triggerAtMillis
+                    HabitReminderContract.CHANNEL_ID,
+                    notificationId,
+                    context.getString(
+                            R.string
+                                    .notification_snooze_limit_title
+                    ),
+                    context.getString(
+                            R.string
+                                    .notification_snooze_limit_message,
+                            habit.title,
+                            HabitRepository
+                                    .MAXIMUM_DAILY_SNOOZES
+                    )
             );
+
+            return;
         }
 
-        NotificationManagerCompat
-                .from(context)
-                .cancel(notificationId);
+        /*
+         * Only show success after the snooze count has been
+         * updated and the next alarm has been scheduled.
+         */
+        HabitReminderScheduler.scheduleSnooze(
+                context,
+                habitId,
+                recordDate,
+                triggerAtMillis
+        );
+
+        NotificationAcknowledgmentHelper.show(
+                context,
+                HabitReminderContract.CHANNEL_ID,
+                notificationId,
+                context.getString(
+                        R.string
+                                .notification_habit_snoozed_title
+                ),
+                context.getString(
+                        R.string
+                                .notification_habit_snoozed_message,
+                        habit.title,
+                        habit.snoozeMinutes
+                )
+        );
+    }
+
+    private static String getStatusName(
+            Context context,
+            HabitStatus status
+    ) {
+        switch (status) {
+            case COMPLETED:
+                return context.getString(
+                        R.string
+                                .habit_status_completed
+                );
+
+            case NOT_COMPLETED:
+                return context.getString(
+                        R.string
+                                .habit_status_not_completed
+                );
+
+            case PENDING:
+            default:
+                return context.getString(
+                        R.string
+                                .habit_status_pending
+                );
+        }
     }
 }

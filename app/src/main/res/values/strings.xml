@@ -382,4 +382,44 @@
     <string name="edit_habit_content_description">
     Edit the %1$s habit. Current status: %2$s
 </string>
+
+    <string name="notification_prayer_saved_title">
+    Prayer saved
+</string>
+
+    <string name="notification_prayer_saved_message">
+    %1$s recorded as %2$s.
+</string>
+
+    <string name="notification_habit_saved_title">
+    Habit saved
+</string>
+
+    <string name="notification_habit_saved_message">
+    %1$s marked %2$s.
+</string>
+
+    <string name="notification_habit_snoozed_title">
+    Reminder snoozed
+</string>
+
+    <string name="notification_habit_snoozed_message">
+    %1$s will remind you again in %2$d minutes.
+</string>
+
+    <string name="notification_snooze_limit_title">
+    Snooze limit reached
+</string>
+
+    <string name="notification_snooze_limit_message">
+    %1$s has already been snoozed %2$d times today.
+</string>
+
+    <string name="notification_snooze_unavailable_title">
+    Snooze unavailable
+</string>
+
+    <string name="notification_snooze_unavailable_message">
+    %1$s cannot be snoozed past the end of today.
+</string>
 </resources>
