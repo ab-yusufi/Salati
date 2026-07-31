@@ -422,4 +422,54 @@
     <string name="notification_snooze_unavailable_message">
     %1$s cannot be snoozed past the end of today.
 </string>
+    <string name="calendar_previous_month">
+    Previous month
+</string>
+
+    <string name="calendar_next_month">
+    Next month
+</string>
+
+    <string name="calendar_go_to_today">
+    Go to Today
+</string>
+
+    <string name="calendar_weekday_monday">Mon</string>
+    <string name="calendar_weekday_tuesday">Tue</string>
+    <string name="calendar_weekday_wednesday">Wed</string>
+    <string name="calendar_weekday_thursday">Thu</string>
+    <string name="calendar_weekday_friday">Fri</string>
+    <string name="calendar_weekday_saturday">Sat</string>
+    <string name="calendar_weekday_sunday">Sun</string>
+
+    <string name="calendar_day_content_description">
+    Open %1$s
+</string>
+
+    <string name="calendar_selected_day_content_description">
+    %1$s, selected
+</string>
+
+    <string name="calendar_future_day_content_description">
+    %1$s, future date unavailable
+</string>
+
+    <string name="calendar_day_summary_format">
+    %1$d of %2$d prayers recorded · %3$d of %4$d habits completed
+</string>
+
+    <string name="calendar_day_summary_no_habits">
+    %1$d of %2$d prayers recorded · No habit records
+</string>
+
+    <string name="calendar_no_prayer_records">
+    No prayer records for this date.
+</string>
+
+    <string name="calendar_no_habit_records">
+    No habit records for this date.
+</string>
+    <string name="calendar_history_edit_hint">
+    Prayer records and existing habit records can be updated for today and past dates. Future dates are unavailable.
+</string>
 </resources>

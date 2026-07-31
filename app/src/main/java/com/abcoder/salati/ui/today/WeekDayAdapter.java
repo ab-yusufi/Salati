@@ -159,11 +159,50 @@ public final class WeekDayAdapter
                     contentDescription
             );
 
-            binding.getRoot().setOnClickListener(
-                    view -> listener.onDateSelected(
-                            date
-                    )
+            boolean future =
+                    date.isAfter(
+                            LocalDate.now()
+                    );
+
+            binding.getRoot().setEnabled(
+                    !future
             );
+
+            binding.getRoot().setAlpha(
+                    future
+                            ? 0.38f
+                            : 1f
+            );
+
+            if (future) {
+                binding.getRoot().setContentDescription(
+                        binding.getRoot()
+                                .getContext()
+                                .getString(
+                                        R.string
+                                                .calendar_future_day_content_description,
+                                        date.format(
+                                                DateTimeFormatter
+                                                        .ofPattern(
+                                                                "EEEE, d MMMM yyyy",
+                                                                Locale.getDefault()
+                                                        )
+                                        )
+                                )
+                );
+
+                binding.getRoot().setOnClickListener(
+                        null
+                );
+
+            } else {
+                binding.getRoot().setOnClickListener(
+                        view ->
+                                listener.onDateSelected(
+                                        date
+                                )
+                );
+            }
         }
 
         private void applyAppearance(
