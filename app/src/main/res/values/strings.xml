@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Salati</string>
-    <string name="setup_title">Salati</string>
+    <string name="app_name">SalahPulse</string>
+    <string name="setup_title">SalahPulse</string>
     <string name="setup_status">Project setup is ready</string>
     <string name="test_button">Test Project</string>
     <string name="test_success">Everything is Working</string>
@@ -124,7 +124,7 @@
 </string>
 
     <string name="notification_onboarding_message">
-    Salati uses notifications for your configured prayer and habit reminders. Reminder times are chosen by you; Salati does not calculate prayer times.
+    SalahPulse uses notifications for your configured prayer and habit reminders. Reminder times are chosen by you; SalahPulse does not calculate prayer times.
 </string>
 
     <string name="notification_onboarding_allow">
@@ -580,7 +580,7 @@
 </string>
 
     <string name="settings_notification_explanation">
-    Salati needs notification permission to show your configured prayer and habit reminders. Notifications are generated locally on this device.
+    SalahPulse needs notification permission to show your configured prayer and habit reminders. Notifications are generated locally on this device.
 </string>
 
     <string name="settings_notifications_enabled_message">
@@ -600,11 +600,11 @@
 </string>
 
     <string name="about_salati">
-    About Salati
+    About SalahPulse
 </string>
 
     <string name="privacy_information">
-    Privacy Information
+    Privacy Policy
 </string>
 
     <string name="app_version_format">
@@ -612,19 +612,19 @@
 </string>
 
     <string name="about_salati_message">
-    Salati version %1$s
+    SalahPulse version %1$s
 
-Salati is an offline prayer and habit tracker designed for deliberate daily recording, configurable reminders, calendar history, and personal insights.
+SalahPulse is an offline prayer and habit tracker designed for deliberate daily recording, configurable reminders, calendar history, and personal insights.
 
-Salati does not calculate prayer times. Prayer reminders use the fixed times configured by you.
+SalahPulse does not calculate prayer times. Prayer reminders use the fixed times configured by you.
 </string>
 
     <string name="privacy_information_message">
-    Salati does not require an account, cloud service, or location permission.
+    SalahPulse does not require an account, cloud service, or location permission.
 
 Prayer records, habit records, reminder settings, and appearance preferences are stored locally by the app.
 
-Salati does not send your tracking data to a Salati server. Android device-backup behavior depends on your device and system backup settings.
+SalahPulse does not send your tracking data to a SalahPulse server. Android device-backup behavior depends on your device and system backup settings.
 
 Deleting the app may remove its locally stored data.
 </string>
