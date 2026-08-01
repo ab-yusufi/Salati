@@ -25,6 +25,9 @@ import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
+import android.content.ActivityNotFoundException;
+import android.net.Uri;
+
 public final class SettingsFragment
         extends Fragment {
 
@@ -151,7 +154,7 @@ public final class SettingsFragment
         binding.privacyButton
                 .setOnClickListener(
                         view ->
-                                showPrivacyDialog()
+                                openPrivacyPolicy()
                 );
     }
 
@@ -470,21 +473,33 @@ public final class SettingsFragment
                 .show();
     }
 
-    private void showPrivacyDialog() {
-        new MaterialAlertDialogBuilder(
-                requireContext()
-        )
-                .setTitle(
-                        R.string.privacy_information
-                )
-                .setMessage(
-                        R.string.privacy_information_message
-                )
-                .setPositiveButton(
-                        R.string.close,
-                        null
-                )
-                .show();
+    private void openPrivacyPolicy() {
+        Uri privacyPolicyUri =
+                Uri.parse(
+                        getString(
+                                R.string.privacy_policy_url
+                        )
+                );
+
+        Intent privacyPolicyIntent =
+                new Intent(
+                        Intent.ACTION_VIEW,
+                        privacyPolicyUri
+                );
+
+        try {
+            startActivity(privacyPolicyIntent);
+        } catch (ActivityNotFoundException exception) {
+            if (binding == null) {
+                return;
+            }
+
+            Snackbar.make(
+                    binding.settingsRoot,
+                    R.string.privacy_policy_open_failed,
+                    Snackbar.LENGTH_LONG
+            ).show();
+        }
     }
 
     private int getThemeModeIndex(

@@ -654,4 +654,11 @@ Deleting the app may remove its locally stored data.
     <string name="today_overview_loading_habits_format">
     %1$d of %2$d prayers recorded · Loading habits…
 </string>
+    <string
+        name="privacy_policy_url"
+        translatable="false">https://ab-yusufi.github.io/Salati/privacy-policy.html</string>
+
+    <string name="privacy_policy_open_failed">
+    Could not open the privacy policy. Please try again.
+</string>
 </resources>
