@@ -272,20 +272,40 @@ public final class InsightsFragment
             );
         }
 
+        boolean nextEnabled =
+                !state.loading
+                        && state.canGoNext;
+
         binding.nextButton.setEnabled(
-                state.canGoNext
+                nextEnabled
         );
 
         binding.nextButton.setAlpha(
-                state.canGoNext
+                nextEnabled
                         ? 1f
                         : 0.38f
         );
 
+        binding.previousButton.setEnabled(
+                !state.loading
+        );
+
+        binding.reportLoadingContainer.setVisibility(
+                state.loading
+                        ? View.VISIBLE
+                        : View.GONE
+        );
+
         binding.noDataCard.setVisibility(
-                state.hasData
-                        ? View.GONE
-                        : View.VISIBLE
+                !state.loading && !state.hasData
+                        ? View.VISIBLE
+                        : View.GONE
+        );
+
+        binding.reportSections.setVisibility(
+                !state.loading && state.hasData
+                        ? View.VISIBLE
+                        : View.GONE
         );
 
         binding.reportSections.setVisibility(

@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.abcoder.salati.R;
 import com.abcoder.salati.SalatiApplication;
@@ -19,19 +20,17 @@ import com.abcoder.salati.data.entity.PrayerRecord;
 import com.abcoder.salati.data.model.HabitStatus;
 import com.abcoder.salati.data.model.PrayerStatus;
 import com.abcoder.salati.data.model.PrayerType;
-import com.abcoder.salati.databinding.FragmentCalendarBinding;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
 import com.abcoder.salati.data.repository.HabitRepository;
 import com.abcoder.salati.data.repository.PrayerRepository;
 import com.abcoder.salati.databinding.BottomSheetHabitStatusBinding;
 import com.abcoder.salati.databinding.BottomSheetPrayerStatusBinding;
+import com.abcoder.salati.databinding.FragmentCalendarBinding;
 import com.abcoder.salati.ui.today.HabitTodayItem;
 import com.abcoder.salati.ui.today.PrayerListAdapter;
 import com.abcoder.salati.ui.today.TodayHabitAdapter;
+import com.abcoder.salati.util.DayRolloverScheduler;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
-import com.abcoder.salati.util.DayRolloverScheduler;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -48,50 +47,57 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-public class CalendarFragment
-        extends Fragment {
+public class CalendarFragment extends Fragment {
 
-    public static final String
-            REQUEST_KEY_SELECTED_DATE =
+    public static final String REQUEST_KEY_SELECTED_DATE =
             "calendar_selected_date_request";
 
-    public static final String
-            BUNDLE_KEY_SELECTED_DATE =
+    public static final String BUNDLE_KEY_SELECTED_DATE =
             "calendar_selected_date";
 
     private FragmentCalendarBinding binding;
 
     private CalendarViewModel viewModel;
+
     private CalendarDayAdapter calendarAdapter;
     private PrayerListAdapter selectedPrayerAdapter;
     private TodayHabitAdapter selectedHabitAdapter;
-    private DayRolloverScheduler
-            dayRolloverScheduler;
 
-    private YearMonth displayedMonth =
-            YearMonth.now();
+    private DayRolloverScheduler dayRolloverScheduler;
 
-    private LocalDate selectedDate =
-            LocalDate.now();
+    /*
+     * These values are supplied by CalendarViewModel.
+     *
+     * They intentionally start as null instead of using a second
+     * LocalDate.now() or YearMonth.now() call inside the Fragment.
+     */
+    private YearMonth displayedMonth;
+    private LocalDate selectedDate;
 
-    private List<PrayerRecord>
-            monthPrayerRecords =
+    private List<PrayerRecord> monthPrayerRecords =
             Collections.emptyList();
 
-    private List<HabitRecord>
-            monthHabitRecords =
+    private List<HabitRecord> monthHabitRecords =
             Collections.emptyList();
 
-    private List<PrayerRecord>
-            selectedPrayerRecords =
+    private List<PrayerRecord> selectedPrayerRecords =
             Collections.emptyList();
 
-    private List<HabitRecord>
-            selectedHabitRecords =
+    private List<HabitRecord> selectedHabitRecords =
             Collections.emptyList();
 
     private List<Habit> allHabits =
             Collections.emptyList();
+
+    /*
+     * An empty list does not automatically mean that the query
+     * finished with no rows. These flags distinguish:
+     *
+     * 1. Waiting for Room
+     * 2. Room returned an empty list
+     */
+    private boolean monthPrayerRecordsLoaded;
+    private boolean monthHabitRecordsLoaded;
 
     private int selectedPrayerRecordedCount;
     private int selectedHabitCompletedCount;
@@ -104,7 +110,29 @@ public class CalendarFragment
         super.onCreate(savedInstanceState);
 
         configureViewModel();
+        configureSelectedDateResultListener();
+    }
 
+    private void configureViewModel() {
+        SalatiApplication application =
+                (SalatiApplication)
+                        requireActivity()
+                                .getApplication();
+
+        CalendarViewModelFactory factory =
+                new CalendarViewModelFactory(
+                        application.getPrayerRepository(),
+                        application.getHabitRepository()
+                );
+
+        viewModel =
+                new ViewModelProvider(
+                        this,
+                        factory
+                ).get(CalendarViewModel.class);
+    }
+
+    private void configureSelectedDateResultListener() {
         getParentFragmentManager()
                 .setFragmentResultListener(
                         REQUEST_KEY_SELECTED_DATE,
@@ -136,29 +164,6 @@ public class CalendarFragment
                 );
     }
 
-    private void configureViewModel() {
-        SalatiApplication application =
-                (SalatiApplication)
-                        requireActivity()
-                                .getApplication();
-
-        CalendarViewModelFactory factory =
-                new CalendarViewModelFactory(
-                        application
-                                .getPrayerRepository(),
-                        application
-                                .getHabitRepository()
-                );
-
-        viewModel =
-                new ViewModelProvider(
-                        this,
-                        factory
-                ).get(
-                        CalendarViewModel.class
-                );
-    }
-
     @Nullable
     @Override
     public View onCreateView(
@@ -185,6 +190,7 @@ public class CalendarFragment
                 view,
                 savedInstanceState
         );
+
         dayRolloverScheduler =
                 new DayRolloverScheduler(
                         this::refreshForCurrentDate
@@ -194,6 +200,7 @@ public class CalendarFragment
         configureSelectedDayLists();
         configureButtons();
         observeCalendarState();
+        updateMonthDataState();
     }
 
     private void configureCalendarGrid() {
@@ -213,25 +220,60 @@ public class CalendarFragment
                 calendarAdapter
         );
 
-        binding.calendarGrid
-                .setNestedScrollingEnabled(
-                        false
+        binding.calendarGrid.setNestedScrollingEnabled(
+                false
+        );
+    }
+
+    private void configureSelectedDayLists() {
+        selectedPrayerAdapter =
+                new PrayerListAdapter(
+                        this::showPrayerStatusSheet
                 );
+
+        binding.selectedPrayerList.setLayoutManager(
+                new LinearLayoutManager(
+                        requireContext()
+                )
+        );
+
+        binding.selectedPrayerList.setAdapter(
+                selectedPrayerAdapter
+        );
+
+        binding.selectedPrayerList
+                .setNestedScrollingEnabled(false);
+
+        selectedHabitAdapter =
+                new TodayHabitAdapter(
+                        this::showHabitStatusSheet
+                );
+
+        binding.selectedHabitList.setLayoutManager(
+                new LinearLayoutManager(
+                        requireContext()
+                )
+        );
+
+        binding.selectedHabitList.setAdapter(
+                selectedHabitAdapter
+        );
+
+        binding.selectedHabitList
+                .setNestedScrollingEnabled(false);
     }
 
     private void configureButtons() {
         binding.previousMonthButton
                 .setOnClickListener(
                         view ->
-                                viewModel
-                                        .showPreviousMonth()
+                                viewModel.showPreviousMonth()
                 );
 
         binding.nextMonthButton
                 .setOnClickListener(
                         view ->
-                                viewModel
-                                        .showNextMonth()
+                                viewModel.showNextMonth()
                 );
 
         binding.todayButton
@@ -250,14 +292,30 @@ public class CalendarFragment
                             rebuildCalendarGrid();
                         }
                 );
+
         viewModel.getDisplayedMonth()
                 .observe(
                         getViewLifecycleOwner(),
                         month -> {
                             displayedMonth = month;
 
+                            /*
+                             * The previous month's rows must not
+                             * remain visible under the new month
+                             * header while Room switches queries.
+                             */
+                            monthPrayerRecords =
+                                    Collections.emptyList();
+
+                            monthHabitRecords =
+                                    Collections.emptyList();
+
+                            monthPrayerRecordsLoaded = false;
+                            monthHabitRecordsLoaded = false;
+
                             updateMonthHeader();
                             rebuildCalendarGrid();
+                            updateMonthDataState();
                         }
                 );
 
@@ -278,11 +336,13 @@ public class CalendarFragment
                         records -> {
                             monthPrayerRecords =
                                     records == null
-                                            ? Collections
-                                            .emptyList()
+                                            ? Collections.emptyList()
                                             : records;
 
+                            monthPrayerRecordsLoaded = true;
+
                             rebuildCalendarGrid();
+                            updateMonthDataState();
                         }
                 );
 
@@ -292,11 +352,13 @@ public class CalendarFragment
                         records -> {
                             monthHabitRecords =
                                     records == null
-                                            ? Collections
-                                            .emptyList()
+                                            ? Collections.emptyList()
                                             : records;
 
+                            monthHabitRecordsLoaded = true;
+
                             rebuildCalendarGrid();
+                            updateMonthDataState();
                         }
                 );
 
@@ -323,8 +385,7 @@ public class CalendarFragment
                         records -> {
                             selectedHabitRecords =
                                     records == null
-                                            ? Collections
-                                            .emptyList()
+                                            ? Collections.emptyList()
                                             : records;
 
                             updateHabitDetails();
@@ -337,8 +398,7 @@ public class CalendarFragment
                         habits -> {
                             allHabits =
                                     habits == null
-                                            ? Collections
-                                            .emptyList()
+                                            ? Collections.emptyList()
                                             : habits;
 
                             updateHabitDetails();
@@ -347,6 +407,12 @@ public class CalendarFragment
     }
 
     private void updateMonthHeader() {
+        if (binding == null
+                || displayedMonth == null) {
+
+            return;
+        }
+
         DateTimeFormatter formatter =
                 DateTimeFormatter.ofPattern(
                         "MMMM yyyy",
@@ -359,18 +425,27 @@ public class CalendarFragment
                 )
         );
 
+        boolean canShowNextMonth =
+                viewModel.canShowNextMonth();
+
         binding.nextMonthButton.setEnabled(
-                viewModel.canShowNextMonth()
+                canShowNextMonth
         );
 
         binding.nextMonthButton.setAlpha(
-                viewModel.canShowNextMonth()
+                canShowNextMonth
                         ? 1f
                         : 0.38f
         );
     }
 
     private void updateSelectedDateHeader() {
+        if (binding == null
+                || selectedDate == null) {
+
+            return;
+        }
+
         binding.selectedDateText.setText(
                 selectedDate.format(
                         DateTimeFormatter.ofPattern(
@@ -379,6 +454,66 @@ public class CalendarFragment
                         )
                 )
         );
+    }
+
+    private void updateMonthDataState() {
+        if (binding == null) {
+            return;
+        }
+
+        boolean loading =
+                !monthPrayerRecordsLoaded
+                        || !monthHabitRecordsLoaded;
+
+        boolean hasRecordedPrayer = false;
+
+        for (PrayerRecord record :
+                monthPrayerRecords) {
+
+            if (record.status
+                    != PrayerStatus.UNRECORDED) {
+
+                hasRecordedPrayer = true;
+                break;
+            }
+        }
+
+        boolean hasRecordedHabit = false;
+
+        for (HabitRecord record :
+                monthHabitRecords) {
+
+            /*
+             * Today may contain automatically created PENDING
+             * rows. A pending row does not mean that the user
+             * recorded habit activity.
+             */
+            if (record.status
+                    != HabitStatus.PENDING) {
+
+                hasRecordedHabit = true;
+                break;
+            }
+        }
+
+        boolean empty =
+                !loading
+                        && !hasRecordedPrayer
+                        && !hasRecordedHabit;
+
+        binding.calendarLoadingIndicator
+                .setVisibility(
+                        loading
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+
+        binding.monthEmptyCard
+                .setVisibility(
+                        empty
+                                ? View.VISIBLE
+                                : View.GONE
+                );
     }
 
     private void rebuildCalendarGrid() {
@@ -406,10 +541,15 @@ public class CalendarFragment
                                 record.recordDate
                         );
 
-                prayerDates.add(date);
-
+                /*
+                 * Only recorded prayer activity creates a dot.
+                 * Automatically ensured UNRECORDED rows do not
+                 * make an empty date look active.
+                 */
                 if (record.status
                         != PrayerStatus.UNRECORDED) {
+
+                    prayerDates.add(date);
 
                     prayerRecordedCounts.merge(
                             date,
@@ -528,6 +668,10 @@ public class CalendarFragment
     }
 
     private void updatePrayerDetails() {
+        if (binding == null) {
+            return;
+        }
+
         int recordedCount = 0;
 
         for (PrayerRecord record :
@@ -562,6 +706,12 @@ public class CalendarFragment
     }
 
     private void updateHabitDetails() {
+        if (binding == null
+                || selectedHabitAdapter == null) {
+
+            return;
+        }
+
         Map<Long, HabitRecord> recordsByHabitId =
                 new HashMap<>();
 
@@ -642,15 +792,14 @@ public class CalendarFragment
         }
 
         if (selectedHabitTotalCount == 0) {
-            binding.selectedDaySummaryText
-                    .setText(
-                            getString(
-                                    R.string
-                                            .calendar_day_summary_no_habits,
-                                    selectedPrayerRecordedCount,
-                                    5
-                            )
-                    );
+            binding.selectedDaySummaryText.setText(
+                    getString(
+                            R.string
+                                    .calendar_day_summary_no_habits,
+                            selectedPrayerRecordedCount,
+                            5
+                    )
+            );
 
             return;
         }
@@ -667,149 +816,6 @@ public class CalendarFragment
         );
     }
 
-    private String getPrayerName(
-            PrayerType prayerType
-    ) {
-        switch (prayerType) {
-            case FAJR:
-                return getString(
-                        R.string.prayer_fajr
-                );
-
-            case DHUHR:
-                return getString(
-                        R.string.prayer_dhuhr
-                );
-
-            case ASR:
-                return getString(
-                        R.string.prayer_asr
-                );
-
-            case MAGHRIB:
-                return getString(
-                        R.string.prayer_maghrib
-                );
-
-            case ISHA:
-                return getString(
-                        R.string.prayer_isha
-                );
-
-            default:
-                throw new IllegalArgumentException(
-                        "Unknown prayer type: "
-                                + prayerType
-                );
-        }
-    }
-
-    private String getPrayerStatusName(
-            PrayerStatus status
-    ) {
-        switch (status) {
-            case ON_TIME:
-                return getString(
-                        R.string.status_on_time
-                );
-
-            case LATE:
-                return getString(
-                        R.string.status_late
-                );
-
-            case MISSED:
-                return getString(
-                        R.string.status_missed
-                );
-
-            case UNRECORDED:
-            default:
-                return getString(
-                        R.string.status_unrecorded
-                );
-        }
-    }
-
-    private String getHabitStatusName(
-            HabitStatus status
-    ) {
-        switch (status) {
-            case COMPLETED:
-                return getString(
-                        R.string
-                                .habit_status_completed
-                );
-
-            case NOT_COMPLETED:
-                return getString(
-                        R.string
-                                .habit_status_not_completed
-                );
-
-            case PENDING:
-            default:
-                return getString(
-                        R.string
-                                .habit_status_pending
-                );
-        }
-    }
-
-    @Override
-    public void onDestroyView() {
-        if (dayRolloverScheduler != null) {
-            dayRolloverScheduler.stop();
-        }
-        binding.calendarGrid.setAdapter(null);
-        binding.selectedPrayerList.setAdapter(null);
-        binding.selectedHabitList.setAdapter(null);
-
-        calendarAdapter = null;
-        selectedPrayerAdapter = null;
-        selectedHabitAdapter = null;
-        dayRolloverScheduler = null;
-        binding = null;
-
-        super.onDestroyView();
-    }
-    private void configureSelectedDayLists() {
-        selectedPrayerAdapter =
-                new PrayerListAdapter(
-                        this::showPrayerStatusSheet
-                );
-
-        binding.selectedPrayerList.setLayoutManager(
-                new LinearLayoutManager(
-                        requireContext()
-                )
-        );
-
-        binding.selectedPrayerList.setAdapter(
-                selectedPrayerAdapter
-        );
-
-        binding.selectedPrayerList
-                .setNestedScrollingEnabled(false);
-
-        selectedHabitAdapter =
-                new TodayHabitAdapter(
-                        this::showHabitStatusSheet
-                );
-
-        binding.selectedHabitList.setLayoutManager(
-                new LinearLayoutManager(
-                        requireContext()
-                )
-        );
-
-        binding.selectedHabitList.setAdapter(
-                selectedHabitAdapter
-        );
-
-        binding.selectedHabitList
-                .setNestedScrollingEnabled(false);
-    }
     private void showPrayerStatusSheet(
             PrayerType prayerType,
             PrayerStatus currentStatus
@@ -821,6 +827,7 @@ public class CalendarFragment
                 || actionDate.isAfter(
                 viewModel.getToday()
         )) {
+
             return;
         }
 
@@ -945,6 +952,7 @@ public class CalendarFragment
 
         dialog.show();
     }
+
     private void savePrayerStatus(
             BottomSheetDialog dialog,
             LocalDate actionDate,
@@ -958,8 +966,7 @@ public class CalendarFragment
                 actionDate,
                 prayerType,
                 newStatus,
-                new PrayerRepository
-                        .OperationCallback() {
+                new PrayerRepository.OperationCallback() {
 
                     @Override
                     public void onSuccess() {
@@ -988,6 +995,7 @@ public class CalendarFragment
                 }
         );
     }
+
     private void showPrayerSavedMessage(
             LocalDate actionDate,
             PrayerType prayerType,
@@ -1050,8 +1058,7 @@ public class CalendarFragment
                 actionDate,
                 prayerType,
                 previousStatus,
-                new PrayerRepository
-                        .OperationCallback() {
+                new PrayerRepository.OperationCallback() {
 
                     @Override
                     public void onSuccess() {
@@ -1083,6 +1090,7 @@ public class CalendarFragment
                 }
         );
     }
+
     private void showHabitStatusSheet(
             long habitId,
             String habitTitle,
@@ -1095,6 +1103,7 @@ public class CalendarFragment
                 || actionDate.isAfter(
                 viewModel.getToday()
         )) {
+
             return;
         }
 
@@ -1203,6 +1212,7 @@ public class CalendarFragment
 
         dialog.show();
     }
+
     private void saveHabitStatus(
             BottomSheetDialog dialog,
             LocalDate actionDate,
@@ -1246,6 +1256,7 @@ public class CalendarFragment
                 }
         );
     }
+
     private void showHabitSavedMessage(
             LocalDate actionDate,
             long habitId,
@@ -1259,7 +1270,9 @@ public class CalendarFragment
 
         String message;
 
-        if (newStatus == HabitStatus.PENDING) {
+        if (newStatus
+                == HabitStatus.PENDING) {
+
             message =
                     getString(
                             R.string
@@ -1338,6 +1351,96 @@ public class CalendarFragment
                 }
         );
     }
+
+    private String getPrayerName(
+            PrayerType prayerType
+    ) {
+        switch (prayerType) {
+            case FAJR:
+                return getString(
+                        R.string.prayer_fajr
+                );
+
+            case DHUHR:
+                return getString(
+                        R.string.prayer_dhuhr
+                );
+
+            case ASR:
+                return getString(
+                        R.string.prayer_asr
+                );
+
+            case MAGHRIB:
+                return getString(
+                        R.string.prayer_maghrib
+                );
+
+            case ISHA:
+                return getString(
+                        R.string.prayer_isha
+                );
+
+            default:
+                throw new IllegalArgumentException(
+                        "Unknown prayer type: "
+                                + prayerType
+                );
+        }
+    }
+
+    private String getPrayerStatusName(
+            PrayerStatus status
+    ) {
+        switch (status) {
+            case ON_TIME:
+                return getString(
+                        R.string.status_on_time
+                );
+
+            case LATE:
+                return getString(
+                        R.string.status_late
+                );
+
+            case MISSED:
+                return getString(
+                        R.string.status_missed
+                );
+
+            case UNRECORDED:
+            default:
+                return getString(
+                        R.string.status_unrecorded
+                );
+        }
+    }
+
+    private String getHabitStatusName(
+            HabitStatus status
+    ) {
+        switch (status) {
+            case COMPLETED:
+                return getString(
+                        R.string
+                                .habit_status_completed
+                );
+
+            case NOT_COMPLETED:
+                return getString(
+                        R.string
+                                .habit_status_not_completed
+                );
+
+            case PENDING:
+            default:
+                return getString(
+                        R.string
+                                .habit_status_pending
+                );
+        }
+    }
+
     private void showSnackbar(
             String message
     ) {
@@ -1351,6 +1454,7 @@ public class CalendarFragment
                 Snackbar.LENGTH_LONG
         ).show();
     }
+
     private void refreshForCurrentDate() {
         if (viewModel != null) {
             viewModel.refreshForCurrentDate();
@@ -1396,5 +1500,48 @@ public class CalendarFragment
         } else {
             dayRolloverScheduler.stop();
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
+
+        if (binding != null) {
+            binding.calendarGrid.setAdapter(null);
+            binding.selectedPrayerList.setAdapter(null);
+            binding.selectedHabitList.setAdapter(null);
+        }
+
+        calendarAdapter = null;
+        selectedPrayerAdapter = null;
+        selectedHabitAdapter = null;
+        dayRolloverScheduler = null;
+
+        displayedMonth = null;
+        selectedDate = null;
+
+        monthPrayerRecords =
+                Collections.emptyList();
+
+        monthHabitRecords =
+                Collections.emptyList();
+
+        selectedPrayerRecords =
+                Collections.emptyList();
+
+        selectedHabitRecords =
+                Collections.emptyList();
+
+        allHabits =
+                Collections.emptyList();
+
+        monthPrayerRecordsLoaded = false;
+        monthHabitRecordsLoaded = false;
+
+        binding = null;
+
+        super.onDestroyView();
     }
 }

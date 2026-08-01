@@ -59,6 +59,9 @@ public final class ReportsViewModel
     private LocalDate anchorDate =
             currentDate;
 
+    private boolean prayerRecordsLoaded;
+    private boolean habitRecordsLoaded;
+    private boolean habitsLoaded;
     private List<PrayerRecord>
             latestPrayerRecords =
             Collections.emptyList();
@@ -109,18 +112,21 @@ public final class ReportsViewModel
         uiState.addSource(
                 prayerRecords,
                 records -> {
+                    prayerRecordsLoaded = true;
                     latestPrayerRecords =
                             records == null
                                     ? Collections.emptyList()
                                     : records;
 
                     rebuildUiState();
+
                 }
         );
 
         uiState.addSource(
                 habitRecords,
                 records -> {
+                    habitRecordsLoaded = true;
                     latestHabitRecords =
                             records == null
                                     ? Collections.emptyList()
@@ -133,6 +139,7 @@ public final class ReportsViewModel
         uiState.addSource(
                 habits,
                 habitList -> {
+                    habitsLoaded = true;
                     latestHabits =
                             habitList == null
                                     ? Collections.emptyList()
@@ -270,6 +277,8 @@ public final class ReportsViewModel
          * Prevent old records from briefly appearing under the
          * newly selected date label.
          */
+        prayerRecordsLoaded = false;
+        habitRecordsLoaded = false;
         latestPrayerRecords =
                 Collections.emptyList();
 
@@ -423,9 +432,16 @@ public final class ReportsViewModel
                         earliestPrayerDate
                 );
 
+        boolean loading =
+                !prayerRecordsLoaded
+                        || !habitRecordsLoaded
+                        || !habitsLoaded;
         boolean hasData =
-                !latestPrayerRecords.isEmpty()
-                        || !latestHabitRecords.isEmpty();
+                !loading
+                        && (
+                        !latestPrayerRecords.isEmpty()
+                                || !latestHabitRecords.isEmpty()
+                );
 
         uiState.setValue(
                 new ReportsUiState(
@@ -437,6 +453,7 @@ public final class ReportsViewModel
                         habitSummary,
                         habitBreakdown,
                         dailyBreakdown,
+                        loading,
                         hasData
                 )
         );

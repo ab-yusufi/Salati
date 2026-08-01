@@ -108,6 +108,37 @@
             tools:itemCount="42"
             tools:listitem="@layout/item_calendar_day" />
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/calendarLoadingIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/calendar_loading"
+            android:indeterminate="true"
+            android:visibility="visible" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/monthEmptyCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:cardCornerRadius="16dp"
+            app:strokeWidth="0dp"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="18dp"
+                android:text="@string/calendar_month_empty"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+        </com.google.android.material.card.MaterialCardView>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/todayButton"
             style="@style/Widget.Material3.Button.TextButton"
@@ -134,22 +165,31 @@
             app:cardCornerRadius="20dp"
             app:strokeWidth="0dp">
 
-            <TextView
-                android:id="@+id/selectedDaySummaryText"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="18dp"
-                android:textAppearance="?attr/textAppearanceBodyLarge"
-                android:textColor="?attr/colorOnSecondaryContainer"
-                android:textStyle="bold"
-                tools:text="3 of 5 prayers recorded · 1 of 2 habits completed" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/calendar_history_edit_hint"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView
+                    android:id="@+id/selectedDaySummaryText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:textStyle="bold"
+                    tools:text="3 of 5 prayers recorded · 1 of 2 habits completed" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/calendar_history_edit_hint"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSecondaryContainer" />
+
+            </LinearLayout>
+
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
@@ -181,6 +221,7 @@
             android:overScrollMode="never"
             tools:itemCount="5"
             tools:listitem="@layout/item_prayer" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -198,6 +239,7 @@
             android:padding="16dp"
             android:text="@string/calendar_no_habit_records"
             android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:visibility="gone"
             tools:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -211,6 +253,7 @@
             tools:itemCount="2"
             tools:listitem="@layout/item_habit_today"
             tools:visibility="visible" />
+
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

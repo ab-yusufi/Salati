@@ -1,5 +1,6 @@
 package com.abcoder.salati.ui.today;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,30 +12,29 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.abcoder.salati.MainActivity;
 import com.abcoder.salati.R;
 import com.abcoder.salati.SalatiApplication;
+import com.abcoder.salati.data.entity.PrayerRecord;
+import com.abcoder.salati.data.model.HabitStatus;
 import com.abcoder.salati.data.model.PrayerStatus;
 import com.abcoder.salati.data.model.PrayerType;
+import com.abcoder.salati.data.repository.HabitRepository;
 import com.abcoder.salati.data.repository.PrayerRepository;
+import com.abcoder.salati.databinding.BottomSheetHabitStatusBinding;
 import com.abcoder.salati.databinding.BottomSheetPrayerStatusBinding;
 import com.abcoder.salati.databinding.FragmentTodayBinding;
+import com.abcoder.salati.ui.habits.HabitManagementActivity;
+import com.abcoder.salati.util.DayRolloverScheduler;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
-
-import com.abcoder.salati.MainActivity;
-import com.abcoder.salati.data.entity.PrayerRecord;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import com.abcoder.salati.data.model.HabitStatus;
-import com.abcoder.salati.data.repository.HabitRepository;
-import com.abcoder.salati.databinding.BottomSheetHabitStatusBinding;
-
-import com.abcoder.salati.util.DayRolloverScheduler;
 
 public class TodayFragment extends Fragment {
 
@@ -49,7 +49,13 @@ public class TodayFragment extends Fragment {
     private DayRolloverScheduler
             dayRolloverScheduler;
 
-    private BottomSheetDialog activeStatusDialog;
+    private BottomSheetDialog
+            activeStatusDialog;
+
+    private List<HabitTodayItem> latestHabitItems =
+            Collections.emptyList();
+
+    private boolean habitDataLoaded;
 
     private int recordedPrayerCount;
     private int totalHabitCount;
@@ -82,20 +88,23 @@ public class TodayFragment extends Fragment {
                 savedInstanceState
         );
 
-
-
         configureViewModel();
 
         dayRolloverScheduler =
                 new DayRolloverScheduler(
                         this::refreshForCurrentDate
                 );
+
         configureWeekDayList();
         configurePrayerList();
         configureHabitList();
+        configureButtons();
+
         observeCurrentDate();
         observePrayerRecords();
-        observeHabitRecords();
+        observeHabitState();
+
+        renderHabitState();
     }
 
     private void configureViewModel() {
@@ -106,10 +115,8 @@ public class TodayFragment extends Fragment {
 
         TodayViewModelFactory factory =
                 new TodayViewModelFactory(
-                        application
-                                .getPrayerRepository(),
-                        application
-                                .getHabitRepository()
+                        application.getPrayerRepository(),
+                        application.getHabitRepository()
                 );
 
         todayViewModel =
@@ -117,6 +124,25 @@ public class TodayFragment extends Fragment {
                         this,
                         factory
                 ).get(TodayViewModel.class);
+    }
+
+    private void configureWeekDayList() {
+        weekDayAdapter =
+                new WeekDayAdapter(
+                        this::openCalendarForDate
+                );
+
+        binding.weekDayList.setLayoutManager(
+                new LinearLayoutManager(
+                        requireContext(),
+                        LinearLayoutManager.HORIZONTAL,
+                        false
+                )
+        );
+
+        binding.weekDayList.setAdapter(
+                weekDayAdapter
+        );
     }
 
     private void configurePrayerList() {
@@ -161,11 +187,36 @@ public class TodayFragment extends Fragment {
         );
     }
 
+    private void configureButtons() {
+        binding.manageHabitsButton
+                .setOnClickListener(
+                        view ->
+                                openHabitManagement()
+                );
+    }
+
+    private void openHabitManagement() {
+        Intent intent =
+                new Intent(
+                        requireContext(),
+                        HabitManagementActivity.class
+                );
+
+        startActivity(intent);
+    }
+
     private void observeCurrentDate() {
         todayViewModel.getCurrentDate()
                 .observe(
                         getViewLifecycleOwner(),
                         date -> {
+                            if (binding == null
+                                    || weekDayAdapter == null
+                                    || date == null) {
+
+                                return;
+                            }
+
                             binding.todayDateText.setText(
                                     todayViewModel
                                             .getDisplayDate()
@@ -186,45 +237,379 @@ public class TodayFragment extends Fragment {
                 .observe(
                         getViewLifecycleOwner(),
                         records -> {
+                            if (binding == null
+                                    || prayerListAdapter == null) {
+
+                                return;
+                            }
+
+                            List<PrayerRecord> safeRecords =
+                                    records == null
+                                            ? Collections.emptyList()
+                                            : records;
+
                             prayerListAdapter.submitList(
-                                    records
+                                    safeRecords
                             );
 
                             updatePrayerSummary(
-                                    records
+                                    safeRecords
                             );
                         }
                 );
     }
 
-    private void observeHabitRecords() {
+    private void observeHabitState() {
         todayViewModel
                 .getTodayHabitItems()
                 .observe(
                         getViewLifecycleOwner(),
                         items -> {
-                            habitAdapter.submitList(items);
-                            updateHabitSummary(items);
+                            if (binding == null
+                                    || habitAdapter == null) {
 
-                            boolean empty =
+                                return;
+                            }
+
+                            latestHabitItems =
                                     items == null
-                                            || items.isEmpty();
+                                            ? Collections.emptyList()
+                                            : items;
 
-                            binding.noHabitsText
-                                    .setVisibility(
-                                            empty
-                                                    ? View.VISIBLE
-                                                    : View.GONE
-                                    );
+                            habitAdapter.submitList(
+                                    latestHabitItems
+                            );
 
-                            binding.habitList
-                                    .setVisibility(
-                                            empty
-                                                    ? View.GONE
-                                                    : View.VISIBLE
-                                    );
+                            updateHabitSummary(
+                                    latestHabitItems
+                            );
+
+                            renderHabitState();
                         }
                 );
+
+        todayViewModel
+                .getHabitDataLoaded()
+                .observe(
+                        getViewLifecycleOwner(),
+                        loaded -> {
+                            habitDataLoaded =
+                                    Boolean.TRUE.equals(
+                                            loaded
+                                    );
+
+                            updateHabitSummary(
+                                    latestHabitItems
+                            );
+
+                            updateDailyOverview();
+                            renderHabitState();
+                        }
+                );
+    }
+
+    private void renderHabitState() {
+        if (binding == null) {
+            return;
+        }
+
+        boolean loading =
+                !habitDataLoaded;
+
+        boolean empty =
+                habitDataLoaded
+                        && latestHabitItems.isEmpty();
+
+        boolean hasHabits =
+                habitDataLoaded
+                        && !latestHabitItems.isEmpty();
+
+        binding.habitLoadingIndicator
+                .setVisibility(
+                        loading
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+
+        binding.noHabitsCard
+                .setVisibility(
+                        empty
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+
+        binding.habitList
+                .setVisibility(
+                        hasHabits
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+
+        binding.habitSummaryCard
+                .setVisibility(
+                        hasHabits
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+    }
+
+    private List<WeekDayItem> createCurrentWeek(
+            LocalDate today
+    ) {
+        LocalDate monday =
+                today.with(
+                        TemporalAdjusters
+                                .previousOrSame(
+                                        DayOfWeek.MONDAY
+                                )
+                );
+
+        List<WeekDayItem> weekDays =
+                new ArrayList<>();
+
+        for (int index = 0;
+             index < 7;
+             index++) {
+
+            LocalDate date =
+                    monday.plusDays(index);
+
+            weekDays.add(
+                    new WeekDayItem(
+                            date,
+                            date.equals(today)
+                    )
+            );
+        }
+
+        return weekDays;
+    }
+
+    private void openCalendarForDate(
+            LocalDate date
+    ) {
+        MainActivity mainActivity =
+                (MainActivity)
+                        requireActivity();
+
+        mainActivity.openCalendarForDate(
+                date
+        );
+    }
+
+    private void updatePrayerSummary(
+            List<PrayerRecord> records
+    ) {
+        if (binding == null) {
+            return;
+        }
+
+        int onTime = 0;
+        int late = 0;
+        int missed = 0;
+
+        if (records != null) {
+            for (PrayerRecord record : records) {
+                switch (record.status) {
+                    case ON_TIME:
+                        onTime++;
+                        break;
+
+                    case LATE:
+                        late++;
+                        break;
+
+                    case MISSED:
+                        missed++;
+                        break;
+
+                    case UNRECORDED:
+                    default:
+                        break;
+                }
+            }
+        }
+
+        int recorded =
+                onTime + late + missed;
+
+        recordedPrayerCount =
+                recorded;
+
+        binding.prayerSummaryText.setText(
+                getString(
+                        R.string
+                                .today_prayer_recorded_format,
+                        recorded,
+                        5
+                )
+        );
+
+        binding.prayerBreakdownText.setText(
+                getString(
+                        R.string
+                                .today_prayer_breakdown_format,
+                        onTime,
+                        late,
+                        missed
+                )
+        );
+
+        binding.prayerProgressIndicator
+                .setProgressCompat(
+                        recorded,
+                        true
+                );
+
+        binding.prayerProgressIndicator
+                .setContentDescription(
+                        getString(
+                                R.string
+                                        .today_prayer_progress_content_description,
+                                recorded,
+                                5
+                        )
+                );
+
+        updateDailyOverview();
+    }
+
+    private void updateHabitSummary(
+            List<HabitTodayItem> items
+    ) {
+        if (binding == null) {
+            return;
+        }
+
+        int completed = 0;
+        int notCompleted = 0;
+        int pending = 0;
+
+        if (items != null) {
+            for (HabitTodayItem item : items) {
+                switch (item.status) {
+                    case COMPLETED:
+                        completed++;
+                        break;
+
+                    case NOT_COMPLETED:
+                        notCompleted++;
+                        break;
+
+                    case PENDING:
+                    default:
+                        pending++;
+                        break;
+                }
+            }
+        }
+
+        int total =
+                completed
+                        + notCompleted
+                        + pending;
+
+        totalHabitCount =
+                total;
+
+        completedHabitCount =
+                completed;
+
+        boolean showSummary =
+                habitDataLoaded
+                        && total > 0;
+
+        binding.habitSummaryCard.setVisibility(
+                showSummary
+                        ? View.VISIBLE
+                        : View.GONE
+        );
+
+        if (total > 0) {
+            binding.habitSummaryText.setText(
+                    getString(
+                            R.string
+                                    .today_habit_completed_format,
+                            completed,
+                            total
+                    )
+            );
+
+            binding.habitBreakdownText.setText(
+                    getString(
+                            R.string
+                                    .today_habit_breakdown_format,
+                            completed,
+                            notCompleted,
+                            pending
+                    )
+            );
+
+            binding.habitProgressIndicator.setMax(
+                    total
+            );
+
+            binding.habitProgressIndicator
+                    .setProgressCompat(
+                            completed,
+                            true
+                    );
+
+            binding.habitProgressIndicator
+                    .setContentDescription(
+                            getString(
+                                    R.string
+                                            .today_habit_progress_content_description,
+                                    completed,
+                                    total
+                            )
+                    );
+        }
+
+        updateDailyOverview();
+    }
+
+    private void updateDailyOverview() {
+        if (binding == null) {
+            return;
+        }
+
+        if (!habitDataLoaded) {
+            binding.dailyOverviewText.setText(
+                    getString(
+                            R.string
+                                    .today_overview_loading_habits_format,
+                            recordedPrayerCount,
+                            5
+                    )
+            );
+
+            return;
+        }
+
+        if (totalHabitCount == 0) {
+            binding.dailyOverviewText.setText(
+                    getString(
+                            R.string
+                                    .today_overview_no_habits_format,
+                            recordedPrayerCount,
+                            5
+                    )
+            );
+
+            return;
+        }
+
+        binding.dailyOverviewText.setText(
+                getString(
+                        R.string
+                                .today_overview_format,
+                        recordedPrayerCount,
+                        5,
+                        completedHabitCount,
+                        totalHabitCount
+                )
+        );
     }
 
     private void showPrayerStatusSheet(
@@ -233,21 +618,25 @@ public class TodayFragment extends Fragment {
     ) {
         BottomSheetPrayerStatusBinding
                 sheetBinding =
-                BottomSheetPrayerStatusBinding
-                        .inflate(
-                                getLayoutInflater()
-                        );
+                BottomSheetPrayerStatusBinding.inflate(
+                        getLayoutInflater()
+                );
 
         BottomSheetDialog dialog =
                 new BottomSheetDialog(
                         requireContext()
                 );
-        activeStatusDialog = dialog;
+
+        activeStatusDialog =
+                dialog;
 
         dialog.setOnDismissListener(
                 ignored -> {
-                    if (activeStatusDialog == dialog) {
-                        activeStatusDialog = null;
+                    if (activeStatusDialog
+                            == dialog) {
+
+                        activeStatusDialog =
+                                null;
                     }
                 }
         );
@@ -257,7 +646,9 @@ public class TodayFragment extends Fragment {
         );
 
         String prayerName =
-                getPrayerName(prayerType);
+                getPrayerName(
+                        prayerType
+                );
 
         boolean recorded =
                 currentStatus
@@ -283,7 +674,9 @@ public class TodayFragment extends Fragment {
                 getString(
                         R.string
                                 .current_prayer_status_format,
-                        getStatusName(currentStatus)
+                        getPrayerStatusName(
+                                currentStatus
+                        )
                 )
         );
 
@@ -403,7 +796,9 @@ public class TodayFragment extends Fragment {
             PrayerStatus previousStatus,
             PrayerStatus newStatus
     ) {
-        if (binding == null || !isAdded()) {
+        if (binding == null
+                || !isAdded()) {
+
             return;
         }
 
@@ -416,7 +811,9 @@ public class TodayFragment extends Fragment {
                     getString(
                             R.string
                                     .prayer_record_cleared_message,
-                            getPrayerName(prayerType)
+                            getPrayerName(
+                                    prayerType
+                            )
                     );
 
         } else {
@@ -424,8 +821,12 @@ public class TodayFragment extends Fragment {
                     getString(
                             R.string
                                     .prayer_saved_message,
-                            getPrayerName(prayerType),
-                            getStatusName(newStatus)
+                            getPrayerName(
+                                    prayerType
+                            ),
+                            getPrayerStatusName(
+                                    newStatus
+                            )
                     );
         }
 
@@ -488,351 +889,6 @@ public class TodayFragment extends Fragment {
         );
     }
 
-    private void showSnackbar(
-            String message
-    ) {
-        if (binding == null || !isAdded()) {
-            return;
-        }
-
-        Snackbar.make(
-                binding.todayRoot,
-                message,
-                Snackbar.LENGTH_LONG
-        ).show();
-    }
-
-    private String getPrayerName(
-            PrayerType prayerType
-    ) {
-        switch (prayerType) {
-            case FAJR:
-                return getString(
-                        R.string.prayer_fajr
-                );
-
-            case DHUHR:
-                return getString(
-                        R.string.prayer_dhuhr
-                );
-
-            case ASR:
-                return getString(
-                        R.string.prayer_asr
-                );
-
-            case MAGHRIB:
-                return getString(
-                        R.string.prayer_maghrib
-                );
-
-            case ISHA:
-                return getString(
-                        R.string.prayer_isha
-                );
-
-            default:
-                throw new IllegalArgumentException(
-                        "Unknown prayer type: "
-                                + prayerType
-                );
-        }
-    }
-
-    private String getStatusName(
-            PrayerStatus status
-    ) {
-        switch (status) {
-            case ON_TIME:
-                return getString(
-                        R.string.status_on_time
-                );
-
-            case LATE:
-                return getString(
-                        R.string.status_late
-                );
-
-            case MISSED:
-                return getString(
-                        R.string.status_missed
-                );
-
-            case UNRECORDED:
-            default:
-                return getString(
-                        R.string.status_unrecorded
-                );
-        }
-    }
-
-    @Override
-    public void onDestroyView() {
-        if (dayRolloverScheduler != null) {
-            dayRolloverScheduler.stop();
-        }
-
-        if (activeStatusDialog != null) {
-            activeStatusDialog.dismiss();
-        }
-        binding.weekDayList.setAdapter(null);
-        binding.prayerList.setAdapter(null);
-        binding.habitList.setAdapter(null);
-
-        weekDayAdapter = null;
-        prayerListAdapter = null;
-        habitAdapter = null;
-        dayRolloverScheduler = null;
-        activeStatusDialog = null;
-        binding = null;
-
-        super.onDestroyView();
-    }
-
-    private void configureWeekDayList() {
-        weekDayAdapter =
-                new WeekDayAdapter(
-                        this::openCalendarForDate
-                );
-
-        binding.weekDayList.setLayoutManager(
-                new LinearLayoutManager(
-                        requireContext(),
-                        LinearLayoutManager.HORIZONTAL,
-                        false
-                )
-        );
-
-        binding.weekDayList.setAdapter(
-                weekDayAdapter
-        );
-
-
-
-    }
-    private List<WeekDayItem> createCurrentWeek(LocalDate today) {
-
-
-        LocalDate monday =
-                today.with(
-                        TemporalAdjusters
-                                .previousOrSame(
-                                        DayOfWeek.MONDAY
-                                )
-                );
-
-        List<WeekDayItem> weekDays =
-                new ArrayList<>();
-
-        for (int index = 0;
-             index < 7;
-             index++) {
-
-            LocalDate date =
-                    monday.plusDays(index);
-
-            weekDays.add(
-                    new WeekDayItem(
-                            date,
-                            date.equals(today)
-                    )
-            );
-        }
-
-        return weekDays;
-    }
-    private void openCalendarForDate(
-            LocalDate date
-    ) {
-        MainActivity mainActivity =
-                (MainActivity) requireActivity();
-
-        mainActivity.openCalendarForDate(
-                date
-        );
-    }
-    private void updatePrayerSummary(
-            List<PrayerRecord> records
-    ) {
-        int onTime = 0;
-        int late = 0;
-        int missed = 0;
-
-        if (records != null) {
-            for (PrayerRecord record : records) {
-                switch (record.status) {
-                    case ON_TIME:
-                        onTime++;
-                        break;
-
-                    case LATE:
-                        late++;
-                        break;
-
-                    case MISSED:
-                        missed++;
-                        break;
-
-                    case UNRECORDED:
-                    default:
-                        break;
-                }
-            }
-        }
-
-        int recorded =
-                onTime + late + missed;
-        recordedPrayerCount = recorded;
-
-        binding.prayerSummaryText.setText(
-                getString(
-                        R.string
-                                .today_prayer_recorded_format,
-                        recorded,
-                        5
-                )
-        );
-
-        binding.prayerBreakdownText.setText(
-                getString(
-                        R.string
-                                .today_prayer_breakdown_format,
-                        onTime,
-                        late,
-                        missed
-                )
-        );
-
-        binding.prayerProgressIndicator
-                .setProgressCompat(
-                        recorded,
-                        true
-                );
-
-        binding.prayerProgressIndicator
-                .setContentDescription(
-                        getString(
-                                R.string
-                                        .today_prayer_progress_content_description,
-                                recorded,
-                                5
-                        )
-                );
-
-        updateDailyOverview();
-    }
-    private void updateHabitSummary(
-            List<HabitTodayItem> items
-    ) {
-        int completed = 0;
-        int notCompleted = 0;
-        int pending = 0;
-
-        if (items != null) {
-            for (HabitTodayItem item : items) {
-                switch (item.status) {
-                    case COMPLETED:
-                        completed++;
-                        break;
-
-                    case NOT_COMPLETED:
-                        notCompleted++;
-                        break;
-
-                    case PENDING:
-                    default:
-                        pending++;
-                        break;
-                }
-            }
-        }
-
-        int total =
-                completed
-                        + notCompleted
-                        + pending;
-
-        totalHabitCount = total;
-        completedHabitCount = completed;
-
-        binding.habitSummaryCard.setVisibility(
-                total > 0
-                        ? View.VISIBLE
-                        : View.GONE
-        );
-
-        if (total > 0) {
-            binding.habitSummaryText.setText(
-                    getString(
-                            R.string
-                                    .today_habit_completed_format,
-                            completed,
-                            total
-                    )
-            );
-
-            binding.habitBreakdownText.setText(
-                    getString(
-                            R.string
-                                    .today_habit_breakdown_format,
-                            completed,
-                            notCompleted,
-                            pending
-                    )
-            );
-
-            binding.habitProgressIndicator.setMax(
-                    total
-            );
-
-            binding.habitProgressIndicator
-                    .setProgressCompat(
-                            completed,
-                            true
-                    );
-
-            binding.habitProgressIndicator
-                    .setContentDescription(
-                            getString(
-                                    R.string
-                                            .today_habit_progress_content_description,
-                                    completed,
-                                    total
-                            )
-                    );
-        }
-
-        updateDailyOverview();
-    }
-    private void updateDailyOverview() {
-        if (binding == null) {
-            return;
-        }
-
-        if (totalHabitCount == 0) {
-            binding.dailyOverviewText.setText(
-                    getString(
-                            R.string
-                                    .today_overview_no_habits_format,
-                            recordedPrayerCount,
-                            5
-                    )
-            );
-
-            return;
-        }
-
-        binding.dailyOverviewText.setText(
-                getString(
-                        R.string
-                                .today_overview_format,
-                        recordedPrayerCount,
-                        5,
-                        completedHabitCount,
-                        totalHabitCount
-                )
-        );
-    }
     private void showHabitStatusSheet(
             long habitId,
             String habitTitle,
@@ -840,21 +896,25 @@ public class TodayFragment extends Fragment {
     ) {
         BottomSheetHabitStatusBinding
                 sheetBinding =
-                BottomSheetHabitStatusBinding
-                        .inflate(
-                                getLayoutInflater()
-                        );
+                BottomSheetHabitStatusBinding.inflate(
+                        getLayoutInflater()
+                );
 
         BottomSheetDialog dialog =
                 new BottomSheetDialog(
                         requireContext()
                 );
-        activeStatusDialog = dialog;
+
+        activeStatusDialog =
+                dialog;
 
         dialog.setOnDismissListener(
                 ignored -> {
-                    if (activeStatusDialog == dialog) {
-                        activeStatusDialog = null;
+                    if (activeStatusDialog
+                            == dialog) {
+
+                        activeStatusDialog =
+                                null;
                     }
                 }
         );
@@ -951,7 +1011,6 @@ public class TodayFragment extends Fragment {
         dialog.show();
     }
 
-
     private void saveHabitStatus(
             BottomSheetDialog dialog,
             long habitId,
@@ -992,80 +1051,24 @@ public class TodayFragment extends Fragment {
                 }
         );
     }
-    private void undoHabitStatus(
-            long habitId,
-            String habitTitle,
-            HabitStatus previousStatus
-    ) {
-        todayViewModel.setHabitStatus(
-                habitId,
-                previousStatus,
-                new HabitRepository
-                        .StatusOperationCallback() {
 
-                    @Override
-                    public void onSuccess() {
-                        showSnackbar(
-                                getString(
-                                        R.string
-                                                .habit_change_undone_message,
-                                        habitTitle
-                                )
-                        );
-                    }
-
-                    @Override
-                    public void onError(
-                            Exception exception
-                    ) {
-                        showSnackbar(
-                                getString(
-                                        R.string
-                                                .habit_undo_failed_message,
-                                        habitTitle
-                                )
-                        );
-                    }
-                }
-        );
-    }
-    private String getHabitStatusName(
-            HabitStatus status
-    ) {
-        switch (status) {
-            case COMPLETED:
-                return getString(
-                        R.string
-                                .habit_status_completed
-                );
-
-            case NOT_COMPLETED:
-                return getString(
-                        R.string
-                                .habit_status_not_completed
-                );
-
-            case PENDING:
-            default:
-                return getString(
-                        R.string
-                                .habit_status_pending
-                );
-        }
-    }
     private void showHabitSavedMessage(
             long habitId,
             String habitTitle,
             HabitStatus previousStatus,
             HabitStatus newStatus
     ) {
-        if (binding == null || !isAdded()) {
+        if (binding == null
+                || !isAdded()) {
+
             return;
         }
 
         String message;
 
-        if (newStatus == HabitStatus.PENDING) {
+        if (newStatus
+                == HabitStatus.PENDING) {
+
             message =
                     getString(
                             R.string
@@ -1103,6 +1106,150 @@ public class TodayFragment extends Fragment {
 
         snackbar.show();
     }
+
+    private void undoHabitStatus(
+            long habitId,
+            String habitTitle,
+            HabitStatus previousStatus
+    ) {
+        todayViewModel.setHabitStatus(
+                habitId,
+                previousStatus,
+                new HabitRepository
+                        .StatusOperationCallback() {
+
+                    @Override
+                    public void onSuccess() {
+                        showSnackbar(
+                                getString(
+                                        R.string
+                                                .habit_change_undone_message,
+                                        habitTitle
+                                )
+                        );
+                    }
+
+                    @Override
+                    public void onError(
+                            Exception exception
+                    ) {
+                        showSnackbar(
+                                getString(
+                                        R.string
+                                                .habit_undo_failed_message,
+                                        habitTitle
+                                )
+                        );
+                    }
+                }
+        );
+    }
+
+    private String getPrayerName(
+            PrayerType prayerType
+    ) {
+        switch (prayerType) {
+            case FAJR:
+                return getString(
+                        R.string.prayer_fajr
+                );
+
+            case DHUHR:
+                return getString(
+                        R.string.prayer_dhuhr
+                );
+
+            case ASR:
+                return getString(
+                        R.string.prayer_asr
+                );
+
+            case MAGHRIB:
+                return getString(
+                        R.string.prayer_maghrib
+                );
+
+            case ISHA:
+                return getString(
+                        R.string.prayer_isha
+                );
+
+            default:
+                throw new IllegalArgumentException(
+                        "Unknown prayer type: "
+                                + prayerType
+                );
+        }
+    }
+
+    private String getPrayerStatusName(
+            PrayerStatus status
+    ) {
+        switch (status) {
+            case ON_TIME:
+                return getString(
+                        R.string.status_on_time
+                );
+
+            case LATE:
+                return getString(
+                        R.string.status_late
+                );
+
+            case MISSED:
+                return getString(
+                        R.string.status_missed
+                );
+
+            case UNRECORDED:
+            default:
+                return getString(
+                        R.string.status_unrecorded
+                );
+        }
+    }
+
+    private String getHabitStatusName(
+            HabitStatus status
+    ) {
+        switch (status) {
+            case COMPLETED:
+                return getString(
+                        R.string
+                                .habit_status_completed
+                );
+
+            case NOT_COMPLETED:
+                return getString(
+                        R.string
+                                .habit_status_not_completed
+                );
+
+            case PENDING:
+            default:
+                return getString(
+                        R.string
+                                .habit_status_pending
+                );
+        }
+    }
+
+    private void showSnackbar(
+            String message
+    ) {
+        if (binding == null
+                || !isAdded()) {
+
+            return;
+        }
+
+        Snackbar.make(
+                binding.todayRoot,
+                message,
+                Snackbar.LENGTH_LONG
+        ).show();
+    }
+
     private void refreshForCurrentDate() {
         if (todayViewModel == null) {
             return;
@@ -1113,8 +1260,8 @@ public class TodayFragment extends Fragment {
                         .refreshDateIfNeeded();
 
         /*
-         * Prevent a sheet opened before midnight from saving
-         * yesterday's visible choice into the new date.
+         * A status sheet opened before midnight must not save
+         * its visible choice into the new date.
          */
         if (dateChanged
                 && activeStatusDialog != null) {
@@ -1122,6 +1269,7 @@ public class TodayFragment extends Fragment {
             activeStatusDialog.dismiss();
         }
     }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -1154,12 +1302,46 @@ public class TodayFragment extends Fragment {
             return;
         }
 
-        if (isResumed() && !isHidden()) {
+        if (isResumed()
+                && !isHidden()) {
+
             refreshForCurrentDate();
             dayRolloverScheduler.start();
 
         } else {
             dayRolloverScheduler.stop();
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (dayRolloverScheduler != null) {
+            dayRolloverScheduler.stop();
+        }
+
+        if (activeStatusDialog != null) {
+            activeStatusDialog.dismiss();
+        }
+
+        if (binding != null) {
+            binding.weekDayList.setAdapter(null);
+            binding.prayerList.setAdapter(null);
+            binding.habitList.setAdapter(null);
+        }
+
+        weekDayAdapter = null;
+        prayerListAdapter = null;
+        habitAdapter = null;
+        dayRolloverScheduler = null;
+        activeStatusDialog = null;
+
+        latestHabitItems =
+                Collections.emptyList();
+
+        habitDataLoaded = false;
+
+        binding = null;
+
+        super.onDestroyView();
     }
 }

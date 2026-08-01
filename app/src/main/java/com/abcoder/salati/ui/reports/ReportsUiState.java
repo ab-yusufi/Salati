@@ -40,6 +40,7 @@ public final class ReportsUiState {
     public final List<DailyBreakdownItem>
             dailyBreakdown;
 
+    public final boolean loading;
     public final boolean hasData;
 
     public ReportsUiState(
@@ -54,6 +55,7 @@ public final class ReportsUiState {
                     habitBreakdown,
             @NonNull List<DailyBreakdownItem>
                     dailyBreakdown,
+            boolean loading,
             boolean hasData
     ) {
         this.period = period;
@@ -73,6 +75,7 @@ public final class ReportsUiState {
                 Collections.unmodifiableList(
                         dailyBreakdown
                 );
+        this.loading = loading;
         this.hasData = hasData;
     }
 

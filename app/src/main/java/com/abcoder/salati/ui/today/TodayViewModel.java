@@ -23,27 +23,34 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class TodayViewModel
-        extends ViewModel {
+public class TodayViewModel extends ViewModel {
 
     private final PrayerRepository prayerRepository;
     private final HabitRepository habitRepository;
 
-    private final MutableLiveData<LocalDate>
-            currentDate =
+    private final MutableLiveData<LocalDate> currentDate =
             new MutableLiveData<>(
                     LocalDate.now()
             );
 
-    private final MediatorLiveData<
-            List<PrayerRecord>>
+    private final MediatorLiveData<List<PrayerRecord>>
             todayPrayerRecords =
             new MediatorLiveData<>();
 
-    private final MediatorLiveData<
-            List<HabitTodayItem>>
+    private final MediatorLiveData<List<HabitTodayItem>>
             todayHabitItems =
             new MediatorLiveData<>();
+
+    /*
+     * This is separate from todayHabitItems because an empty list
+     * can mean two different things:
+     *
+     * 1. Room is still loading.
+     * 2. Room finished and there are no enabled habits.
+     */
+    private final MutableLiveData<Boolean>
+            habitDataLoaded =
+            new MutableLiveData<>(false);
 
     private LiveData<List<PrayerRecord>>
             activePrayerSource;
@@ -57,6 +64,13 @@ public class TodayViewModel
     private List<HabitRecord> todayHabitRecords =
             new ArrayList<>();
 
+    /*
+     * Habit items must not be built until both Room queries
+     * have emitted at least once.
+     */
+    private boolean enabledHabitsLoaded;
+    private boolean todayHabitRecordsLoaded;
+
     public TodayViewModel(
             PrayerRepository prayerRepository,
             HabitRepository habitRepository
@@ -68,13 +82,14 @@ public class TodayViewModel
                 habitRepository;
 
         todayHabitItems.addSource(
-                habitRepository
-                        .observeEnabledHabits(),
+                habitRepository.observeEnabledHabits(),
                 habits -> {
                     enabledHabits =
                             habits == null
                                     ? new ArrayList<>()
                                     : habits;
+
+                    enabledHabitsLoaded = true;
 
                     rebuildHabitItems();
                 }
@@ -85,8 +100,7 @@ public class TodayViewModel
         );
     }
 
-    public LiveData<LocalDate>
-    getCurrentDate() {
+    public LiveData<LocalDate> getCurrentDate() {
         return currentDate;
     }
 
@@ -100,8 +114,14 @@ public class TodayViewModel
         return todayHabitItems;
     }
 
+    public LiveData<Boolean> getHabitDataLoaded() {
+        return habitDataLoaded;
+    }
+
     /**
-     * Returns true only when the device date changed.
+     * Checks whether the device date has changed.
+     *
+     * @return true only when the current date changed.
      */
     public boolean refreshDateIfNeeded() {
         LocalDate newDate =
@@ -115,6 +135,7 @@ public class TodayViewModel
         }
 
         currentDate.setValue(newDate);
+
         switchDateSources(newDate);
 
         return true;
@@ -207,22 +228,28 @@ public class TodayViewModel
         }
 
         /*
-         * Clear yesterday's values immediately while Room loads
-         * the newly selected date.
+         * Clear the previous prayer values while Room switches
+         * to the new date.
          */
         todayPrayerRecords.setValue(
                 new ArrayList<>()
         );
 
+        /*
+         * Do not publish an empty habit list here. Publishing an
+         * empty list would incorrectly display the empty state
+         * while Room is still loading.
+         */
         todayHabitRecords =
                 new ArrayList<>();
 
-        rebuildHabitItems();
+        todayHabitRecordsLoaded = false;
 
-        prayerRepository
-                .ensurePrayerRecordsForDate(
-                        dateValue
-                );
+        habitDataLoaded.setValue(false);
+
+        prayerRepository.ensurePrayerRecordsForDate(
+                dateValue
+        );
 
         habitRepository.ensureRecordsForDate(
                 dateValue
@@ -244,10 +271,9 @@ public class TodayViewModel
         );
 
         activeHabitRecordSource =
-                habitRepository
-                        .observeRecordsForDate(
-                                dateValue
-                        );
+                habitRepository.observeRecordsForDate(
+                        dateValue
+                );
 
         todayHabitItems.addSource(
                 activeHabitRecordSource,
@@ -256,6 +282,8 @@ public class TodayViewModel
                             records == null
                                     ? new ArrayList<>()
                                     : records;
+
+                    todayHabitRecordsLoaded = true;
 
                     rebuildHabitItems();
                 }
@@ -272,6 +300,19 @@ public class TodayViewModel
     }
 
     private void rebuildHabitItems() {
+        /*
+         * Wait until both Room queries have returned.
+         *
+         * Without this check, an initial empty enabled-habit
+         * value or empty date-record value can temporarily
+         * produce a false empty state.
+         */
+        if (!enabledHabitsLoaded
+                || !todayHabitRecordsLoaded) {
+
+            return;
+        }
+
         Map<Long, HabitRecord> recordMap =
                 new HashMap<>();
 
@@ -313,6 +354,12 @@ public class TodayViewModel
             }
         }
 
+        /*
+         * Publish the completed list before marking loading as
+         * finished. The Fragment will therefore always have the
+         * latest list when it renders the loaded state.
+         */
         todayHabitItems.setValue(items);
+        habitDataLoaded.setValue(true);
     }
 }

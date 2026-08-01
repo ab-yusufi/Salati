@@ -632,4 +632,26 @@ Deleting the app may remove its locally stored data.
     <string name="close">
     Close
 </string>
+    <string name="insights_loading">
+    Loading report…
+</string>
+    <string name="calendar_loading">
+    Loading calendar history
+</string>
+
+    <string name="calendar_month_empty">
+    No prayer or habit activity has been recorded in this month yet.
+</string>
+
+    <string name="today_habits_loading">
+    Loading today’s habits
+</string>
+
+    <string name="today_no_active_habits_title">
+    No active habits
+</string>
+
+    <string name="today_overview_loading_habits_format">
+    %1$d of %2$d prayers recorded · Loading habits…
+</string>
 </resources>
