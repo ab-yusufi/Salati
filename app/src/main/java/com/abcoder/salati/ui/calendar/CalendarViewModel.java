@@ -25,21 +25,23 @@ public final class CalendarViewModel
 
     private final PrayerRepository prayerRepository;
     private final HabitRepository habitRepository;
+    private final LocalDate initialDate =
+            LocalDate.now();
     private final MutableLiveData<LocalDate>
             currentDate =
             new MutableLiveData<>(
-                    LocalDate.now()
+                    initialDate
             );
     private final MutableLiveData<YearMonth>
             displayedMonth =
             new MutableLiveData<>(
-                    YearMonth.now()
+                    YearMonth.from(initialDate)
             );
 
     private final MutableLiveData<LocalDate>
             selectedDate =
             new MutableLiveData<>(
-                    LocalDate.now()
+                    initialDate
             );
 
     private final LiveData<List<PrayerRecord>>
@@ -336,6 +338,9 @@ public final class CalendarViewModel
     private void moveMonth(
             long monthDifference
     ) {
+        LocalDate today =
+                getToday();
+
         YearMonth currentMonth =
                 displayedMonth.getValue();
 
@@ -343,12 +348,12 @@ public final class CalendarViewModel
                 selectedDate.getValue();
 
         if (currentMonth == null) {
-            currentMonth = YearMonth.now();
+            currentMonth =
+                    YearMonth.from(today);
         }
 
         if (currentSelection == null) {
-            currentSelection =
-                    getToday();
+            currentSelection = today;
         }
 
         YearMonth targetMonth =
@@ -357,7 +362,7 @@ public final class CalendarViewModel
                 );
 
         if (targetMonth.isAfter(
-                YearMonth.now()
+                YearMonth.from(today)
         )) {
             return;
         }
@@ -375,10 +380,8 @@ public final class CalendarViewModel
                         targetDay
                 );
 
-        if (targetDate.isAfter(
-                getToday()
-        )) {
-            targetDate = LocalDate.now();
+        if (targetDate.isAfter(today)) {
+            targetDate = today;
         }
 
         displayedMonth.setValue(
